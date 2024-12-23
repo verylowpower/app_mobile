@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Cần cài đặt thư viện react-native-vector-icons
 
 export default function ChangePassword() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleConfirm = () => {
     if (newPassword !== confirmPassword) {
@@ -19,27 +23,56 @@ export default function ChangePassword() {
     <View style={styles.container}>
       <Text style={styles.title}>Đổi Mật Khẩu</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nhập mật khẩu cũ"
-        secureTextEntry
-        value={oldPassword}
-        onChangeText={setOldPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Nhập mật khẩu mới"
-        secureTextEntry
-        value={newPassword}
-        onChangeText={setNewPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Xác nhận mật khẩu mới"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nhập mật khẩu cũ"
+          secureTextEntry={!showOldPassword}
+          value={oldPassword}
+          onChangeText={setOldPassword}
+        />
+        <TouchableOpacity onPress={() => setShowOldPassword(!showOldPassword)}>
+          <Icon
+            name={showOldPassword ? 'visibility' : 'visibility-off'}
+            size={20}
+            color="#888"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nhập mật khẩu mới"
+          secureTextEntry={!showNewPassword}
+          value={newPassword}
+          onChangeText={setNewPassword}
+        />
+        <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
+          <Icon
+            name={showNewPassword ? 'visibility' : 'visibility-off'}
+            size={20}
+            color="#888"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Xác nhận mật khẩu mới"
+          secureTextEntry={!showConfirmPassword}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+          <Icon
+            name={showConfirmPassword ? 'visibility' : 'visibility-off'}
+            size={20}
+            color="#888"
+          />
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={handleConfirm}>
         <Text style={styles.buttonText}>Xác Nhận</Text>
@@ -58,19 +91,25 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#5867dd',
+    color: '#4CAF50',
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 20,
     marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 10,
   },
   button: {
-    backgroundColor: '#5867dd',
+    backgroundColor: '#4CAF50',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
   },
   buttonText: {

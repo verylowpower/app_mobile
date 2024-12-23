@@ -31,7 +31,7 @@ export default function UserSetting() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, styles.dangerButton]}
         onPress={() => router.push('/setting/deleteAccount')}
       >
         <Text style={styles.buttonText}>Xóa Tài Khoản</Text>
@@ -44,21 +44,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    justifyContent: 'flex-start', 
+    backgroundColor: '#F9F9F9',
+    paddingHorizontal: 20,
+    paddingTop: 70,
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 30,
   },
   button: {
-    backgroundColor: '#4EAF4E',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
+    width: '100%',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    borderRadius: 25,
+    marginBottom: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  dangerButton: {
+    backgroundColor: '#FF5252',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '500',
   },
 });

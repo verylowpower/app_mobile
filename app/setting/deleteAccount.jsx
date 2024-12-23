@@ -49,14 +49,14 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: '#ddd',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 25,
     flex: 1,
     marginRight: 10,
   },
   deleteButton: {
     backgroundColor: '#ff4d4d',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 25,
     flex: 1,
   },
   buttonText: {
