@@ -12,7 +12,7 @@ export default function Profile() {
       'Bạn có chắc chắn muốn đăng xuất?',
       [
         { text: 'Hủy', style: 'cancel' },
-        { text: 'Đăng Xuất', onPress: () => navigation.replace('Login') }, // Giả sử bạn có màn hình Login
+        { text: 'Đăng Xuất', onPress: () => router.replace('/login/login') }, // Use router.replace for navigation
       ]
     );
   };

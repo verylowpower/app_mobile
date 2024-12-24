@@ -1,8 +1,10 @@
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import React from 'react';
-import { Checkbox } from 'react-native-paper'; // Import Checkbox từ thư viện react-native-paper
+import { Checkbox } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 
 export default function ForgotPass() {
+  const router = useRouter();
   const [email, setEmail] = React.useState('');
   const [oldPassword, setOldPassword] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
@@ -16,19 +18,24 @@ export default function ForgotPass() {
       message, // Nội dung
       [
         { text: 'OK', onPress: () => console.log('OK Pressed') },
-      ],
+      ,
       { cancelable: true } // Cho phép người dùng hủy thông báo bằng cách nhấn ra ngoài
-    );
+    ]);
   };
 
   // Hàm kiểm tra và gửi yêu cầu thay đổi mật khẩu
   const handleResetPassword = () => {
     if (newPassword === confirmPassword) {
       showCustomAlert('Success', 'Mật khẩu đã được thay đổi thành công.');
+      router.replace('/login/login'); // Navigate back to login using replace
     } else {
       showCustomAlert('Error', 'Mật khẩu mới và xác nhận mật khẩu không khớp.');
     }
   };
+
+  const handleLoginLink = () => {
+      router.replace('/login/login'); // Navigate back to login using replace
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -90,7 +97,7 @@ export default function ForgotPass() {
         </View>
         <Text style={styles.loginText}>
           Đã nhớ mật khẩu?{' '}
-          <Text style={styles.link} onPress={() => showCustomAlert('Login', 'Đi tới đăng nhập')}>
+          <Text style={styles.link} onPress={handleLoginLink}>
             Đăng Nhập Ngay
           </Text>
         </Text>

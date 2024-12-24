@@ -1,9 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function DeleteAccount() {
+  const navigation = useNavigation();
+
   const handleDelete = () => {
     alert('Tài khoản của bạn đã bị xóa!');
+    // Thực hiện logic xóa tài khoản ở đây
+  };
+
+  const handleCancel = () => {
+    navigation.goBack(); // Quay lại màn hình trước đó (màn hình cài đặt)
   };
 
   return (
@@ -14,7 +22,7 @@ export default function DeleteAccount() {
       </Text>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.cancelButton}>
+        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
           <Text style={styles.buttonText}>Hủy Bỏ</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>

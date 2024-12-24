@@ -1,124 +1,134 @@
 // checkout.jsx
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { RadioButton } from 'react-native-paper';
 import { useCart } from './cartContext';
 
-export default function Checkout({onBack}) {
-  const { cart, updateQuantity, calculateTotal, removeFromCart } = useCart();
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
-  const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+const { height } = Dimensions.get('window');
+const MAX_CART_ITEMS_HEIGHT = height * 0.3; // Adjust as needed
+
+export default function Checkout({ onBack }) {
+    const { cart, updateQuantity, calculateTotal, removeFromCart } = useCart();
+    const [address, setAddress] = useState('');
+    const [phone, setPhone] = useState('');
+    const [note, setNote] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('');
 
     const deleteItem = (id) => {
         removeFromCart(id);
     };
-  const handlePayment = () => {
-    if (!paymentMethod) {
-      alert('Vui lòng chọn phương thức thanh toán.');
-      return;
-    }
-    alert('Thanh toán thành công!');
-      onBack();
-  };
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.headerSection}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Ionicons name="arrow-back" size={24} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thanh Toán</Text>
-      </View>
+    const handlePayment = () => {
+        if (!paymentMethod) {
+            alert('Vui lòng chọn phương thức thanh toán.');
+            return;
+        }
+        alert('Thanh toán thành công!');
+        onBack();
+    };
 
-      {/* Body */}
-      <ScrollView style={styles.bodySection}>
-        {/* Order Section */}
-        <Text style={styles.sectionTitle}>Đơn đặt hàng của bạn</Text>
-        {cart.map(item => (
-          <View key={item.id} style={styles.cartItem}>
-            {item.image && <Image source={{uri: item.image}} style={styles.itemImage} />}
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>Đơn giá: {item.price.toLocaleString()} đ</Text>
-              <View style={styles.quantitySection}>
-                <TextInput
-                  style={styles.quantityInput}
-                  keyboardType="numeric"
-                  value={item.quantity.toString()}
-                  onChangeText={text => updateQuantity(item.id, Math.max(1, parseInt(text) || 1))}
-                />
-                <Text style={styles.itemTotalPrice}>{(item.price * item.quantity).toLocaleString()} đ</Text>
-                <TouchableOpacity onPress={() => deleteItem(item.id)}>
-                  <Ionicons name="trash" size={24} color="red" style={styles.deleteIcon} />
+    return (
+        <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.headerSection}>
+                <TouchableOpacity style={styles.backButton} onPress={onBack}>
+                    <Ionicons name="arrow-back" size={24} color="#4CAF50" />
                 </TouchableOpacity>
-              </View>
+                <Text style={styles.headerTitle}>Thanh Toán</Text>
             </View>
-          </View>
-        ))}
+            {/* Body */}
+            <ScrollView style={styles.bodyScrollView}>
+                <View style={styles.bodySection}>
+                    {/* Order Section */}
+                    <Text style={styles.sectionTitle}>Đơn đặt hàng của bạn</Text>
+                    <View style={[styles.cartItemsContainer, { maxHeight: MAX_CART_ITEMS_HEIGHT }]}>
+                        <ScrollView>
+                            {cart.map(item => (
+                                <View key={item.id} style={styles.cartItem}>
+                                    {item.image && <Image source={{ uri: item.image }} style={styles.itemImage} />}
+                                    <View style={styles.itemDetails}>
+                                        <Text style={styles.itemName}>{item.name}</Text>
+                                        <Text style={styles.itemPrice}>Đơn giá: {item.price.toLocaleString()} đ</Text>
+                                        <View style={styles.quantitySection}>
+                                            <TextInput
+                                                style={styles.quantityInput}
+                                                keyboardType="numeric"
+                                                value={item.quantity.toString()}
+                                                onChangeText={text => updateQuantity(item.id, Math.max(1, parseInt(text) || 1))}
+                                            />
+                                            <Text style={styles.itemTotalPrice}>{(item.price * item.quantity).toLocaleString()} đ</Text>
+                                            <TouchableOpacity onPress={() => deleteItem(item.id)}>
+                                                <Ionicons name="trash" size={24} color="red" style={styles.deleteIcon} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
 
-        {/* Shipping Info Section */}
-        <Text style={styles.sectionTitle}>Thông tin nhận hàng</Text>
-        <View style={styles.infoSection}>
-          <Text>Email: greenshopadm@gmail.com</Text>
-          <Text>Tên: hongg</Text>
-          <TextInput
-            style={styles.inputField}
-            placeholder="Địa chỉ"
-            value={address}
-            onChangeText={setAddress}
-          />
-          <TextInput
-            style={styles.inputField}
-            placeholder="Số điện thoại"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-          />
-          <TextInput
-            style={styles.inputField}
-            placeholder="Ghi chú (nếu có)"
-            value={note}
-            onChangeText={setNote}
-          />
+                    {/* Shipping Info Section */}
+                    <Text style={styles.sectionTitle}>Thông tin nhận hàng</Text>
+                    <View style={styles.infoSection}>
+                        <Text>Email: greenshopadm@gmail.com</Text>
+                        <Text>Tên: hongg</Text>
+                        <TextInput
+                            style={styles.inputField}
+                            placeholder="Địa chỉ"
+                            value={address}
+                            onChangeText={setAddress}
+                        />
+                        <TextInput
+                            style={styles.inputField}
+                            placeholder="Số điện thoại"
+                            keyboardType="phone-pad"
+                            value={phone}
+                            onChangeText={setPhone}
+                        />
+                        <TextInput
+                            style={styles.inputField}
+                            placeholder="Ghi chú (nếu có)"
+                            value={note}
+                            onChangeText={setNote}
+                        />
+                    </View>
+
+                    {/* Payment Method Section with Radio Buttons */}
+                    <Text style={styles.sectionTitle}>Chọn phương thức thanh toán</Text>
+                      <View style={styles.paymentMethodsContainer}>
+                            <View style={styles.paymentMethods}>
+                                <View style={styles.paymentOption}>
+                                    <RadioButton
+                                        value="COD"
+                                        status={paymentMethod === 'COD' ? 'checked' : 'unchecked'}
+                                        onPress={() => setPaymentMethod('COD')}
+                                        color="#4CAF50"
+                                    />
+                                    <Text style={styles.option}>Ship COD(Thanh toán khi nhận hàng)</Text>
+                                </View>
+                                <View style={styles.paymentOption}>
+                                    <RadioButton
+                                        value="Paypal"
+                                        status={paymentMethod === 'Paypal' ? 'checked' : 'unchecked'}
+                                        onPress={() => setPaymentMethod('Paypal')}
+                                        color="#4CAF50"
+                                    />
+                                    <Text style={styles.option}>Thanh toán với Paypal</Text>
+                                </View>
+                            </View>
+                      </View>
+                </View>
+            </ScrollView>
+             {/* Footer Section */}
+             <View style={styles.footerSection}>
+                 <Text style={styles.totalText}>Tổng cộng: {calculateTotal().toLocaleString()} đ</Text>
+                 <TouchableOpacity style={styles.checkoutButton} onPress={handlePayment}>
+                     <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
+                 </TouchableOpacity>
+             </View>
         </View>
-
-        {/* Payment Method Section with Radio Buttons */}
-        <Text style={styles.sectionTitle}>Chọn phương thức thanh toán</Text>
-        <View style={styles.paymentMethods}>
-          <View style={styles.paymentOption}>
-            <RadioButton
-              value="COD"
-              status={paymentMethod === 'COD' ? 'checked' : 'unchecked'}
-              onPress={() => setPaymentMethod('COD')}
-              color="#4CAF50"
-            />
-            <Text style={styles.option}>Ship COD(Thanh toán khi nhận hàng)</Text>
-          </View>
-          <View style={styles.paymentOption}>
-            <RadioButton
-              value="Paypal"
-              status={paymentMethod === 'Paypal' ? 'checked' : 'unchecked'}
-              onPress={() => setPaymentMethod('Paypal')}
-              color="#4CAF50"
-            />
-            <Text style={styles.option}>Thanh toán với Paypal</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Footer Section */}
-      <View style={styles.footerSection}>
-        <Text style={styles.totalText}>Tổng cộng: {calculateTotal().toLocaleString()} đ</Text>
-        <TouchableOpacity style={styles.checkoutButton} onPress={handlePayment}>
-          <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
@@ -144,11 +154,23 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#4CAF50',
     },
+    bodyScrollView: {
+       flex: 1,
+    },
     bodySection: {
-        flex: 1,
         paddingHorizontal: 16,
         paddingVertical: 10,
+      // flex:1, // remove this if using scrollview
     },
+    cartItemsContainer: {
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 10,
+    },
+      paymentMethodsContainer : {
+            marginBottom: 20,
+        },
     sectionTitle: {
         fontSize: 16,
         fontWeight: 'bold',
@@ -218,18 +240,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 20,
-        padding: 10,
-        marginBottom: 10,
+        padding: 8,
+        marginBottom: 8,
         fontStyle: 'italic',
     },
     paymentMethods: {
         flexDirection: 'column',
-        marginBottom: 20,
     },
     paymentOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     option: {
         fontSize: 14,
@@ -241,19 +262,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 16,
+        padding: 15,
         borderTopWidth: 1,
         borderTopColor: '#ddd',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         backgroundColor: '#fff',
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowOffset: { width: 0, height: -2 },
         shadowRadius: 5,
         elevation: 5,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
     },
     totalText: {
         fontSize: 16,

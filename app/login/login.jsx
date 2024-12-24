@@ -1,28 +1,38 @@
-import { StyleSheet,View, Text, TextInput, TouchableOpacity, Image, ScrollView,Alert } from 'react-native';
-import { Checkbox } from 'react-native-paper'; // Thay thế Checkbox từ react-native-paper
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { Checkbox } from 'react-native-paper';
 import React from 'react';
+import { useRouter } from 'expo-router';
 
 export default function Login() {
   const [isPasswordVisible, setPasswordVisibility] = React.useState(false);
   const [rememberMe, setRememberMe] = React.useState(false);
- 
- // Hàm hiển thị thông báo với tiêu đề tùy chỉnh
- const showCustomAlert = (title, message) => {
-  Alert.alert(
-    title, // Tiêu đề
-    message, // Nội dung
-    [
-      { text: 'OK', onPress: () => console.log('OK Pressed') },
-    ],
-    { cancelable: true } // Cho phép người dùng hủy thông báo bằng cách nhấn ra ngoài
-  );
-};
+  const router = useRouter(); // Get the router object
+
+  // Hàm hiển thị thông báo với tiêu đề tùy chỉnh
+  const showCustomAlert = (title, message) => {
+      Alert.alert(
+        title, // Tiêu đề
+        message, // Nội dung
+        [
+          { text: 'OK', onPress: () => console.log('OK Pressed') },
+        ],
+        { cancelable: true } // Cho phép người dùng hủy thông báo bằng cách nhấn ra ngoài
+      );
+    };
+
+  // Function to handle login (replace with your login logic)
+  const handleLogin = () => {
+    // Simulate successful login
+    // For example: Check user credentials then redirect
+    // After successful login, navigate to the home page
+     router.push("/home");
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} >
       <View style={styles.logoSection} >
         <Image
-          source={require('./../../assets/images/logo.jpg')} // Đảm bảo đường dẫn này đúng
+          source={require('./../../assets/images/logo.jpg')}
           style={styles.logoImage}
         />
       </View>
@@ -60,20 +70,20 @@ export default function Login() {
               <Text style={styles.label}>Nhớ tôi</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText} >Đăng Nhập</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.forgotPassword}>
-          <Text style={styles.link} 
-          onPress={() => showCustomAlert('Quên Mật Khẩu', 'Đi tới quên mật khẩu')}>
+          <Text style={styles.link}
+            onPress={() => router.push("/login/forgotpass")}>
             Quên Mật Khẩu?
           </Text>
         </Text>
         <Text style={styles.register}>
           Bạn Chưa Có Tài Khoản?{' '}
-          <Text style={styles.link} 
-          onPress={() => showCustomAlert('Đăng Ký', 'Đi tới đăng ký')}>
+          <Text style={styles.link}
+            onPress={() => router.push("/login/register")}>
             Đăng Ký Ngay
           </Text>
         </Text>
@@ -120,7 +130,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
     fontFamily:'outfit',
-   
+
   },
   subtitle: {
     fontSize: 16,

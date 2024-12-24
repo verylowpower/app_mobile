@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useCart, CartItem } from '../cart/cartContext';
 import { ListRenderItem } from 'react-native';
-
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const Favorite = () => {
-    const { favorites, cart, favoritesLoading } = useCart();
+    const { favorites, cart, favoritesLoading, removeFromFavorites } = useCart();
     const [favoriteItems, setFavoriteItems] = useState<CartItem[]>([]);
 
     useEffect(() => {
@@ -16,6 +16,10 @@ const Favorite = () => {
         }
     }, [favorites, cart, favoritesLoading]);
 
+    const handleRemoveFavorite = (itemId: string) => {
+        removeFromFavorites(itemId);
+    };
+
 
     const renderItem: ListRenderItem<CartItem> = ({ item }) => (
         <View style={styles.productItem}>
@@ -24,9 +28,11 @@ const Favorite = () => {
                 <Text style={styles.productName}>{item.name}</Text>
                 <Text style={styles.productPrice}>{item.price} đ</Text>
             </View>
+            <TouchableOpacity onPress={() => handleRemoveFavorite(item.id)} style={styles.deleteButton}>
+                <Ionicons name="trash-outline" size={24} color="#ff4d4d" />
+            </TouchableOpacity>
         </View>
     );
-
 
     if (favoritesLoading) {
         return (
@@ -36,7 +42,6 @@ const Favorite = () => {
             </View>
         );
     }
-
 
     return (
         <View style={styles.container}>
@@ -106,6 +111,9 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontSize: 16,
         color: '#555',
+    },
+    deleteButton: {
+        padding: 5,
     },
 });
 

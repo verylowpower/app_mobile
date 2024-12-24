@@ -1,178 +1,179 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useEffect,
-} from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// cartContext.tsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Define types for the cart item and context
-export type CartItem = {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  quantity: number;
-};
-
-interface CartContextType {
-  cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, newQuantity: number) => void;
-  calculateTotal: () => number;
-  favorites: string[]; //Changed to string[] type
-  addToFavorites: (item: CartItem) => void; //Keep item as CartItem
-  removeFromFavorites: (id: string) => void;
-  isFavorite: (id: string) => boolean;
-  favoritesLoading: boolean;
-    clearFavorites: () => void;
-
+interface CartItem {
+    id: string;
+    name: string;
+    image: string;
+    price: number;
+    quantity: number;
+    description?: string; // Added this line
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+interface CartContextProps {
+    cart: CartItem[];
+    favorites: string[];
+    addToCart: (item: CartItem) => void;
+    removeFromCart: (itemId: string) => void;
+    updateQuantity: (itemId: string, quantity: number) => void;
+    clearCart: () => void;
+    addToFavorites: (item: CartItem) => void;
+    removeFromFavorites: (itemId: string) => void;
+    isFavorite: (itemId: string) => boolean;
+    favoritesLoading: boolean;
+    cartLoading: boolean;
+    calculateTotal: () => number;
+}
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [favoritesLoading, setFavoritesLoading] = useState<boolean>(true);
+const CartContext = createContext<CartContextProps | undefined>(undefined);
 
-  useEffect(() => {
-    const loadCart = async () => {
-      try {
-        const storedCart = await AsyncStorage.getItem("cart");
-        if (storedCart) {
-          setCart(JSON.parse(storedCart));
-        }
-      } catch (error) {
-        console.error("Error loading cart from AsyncStorage:", error);
-      }
-    };
+const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [cart, setCart] = useState<CartItem[]>([]);
+    const [favorites, setFavorites] = useState<string[]>([]);
+    const [favoritesLoading, setFavoritesLoading] = useState(true);
+    const [cartLoading, setCartLoading] = useState(true);
 
-    const loadFavorites = async () => {
-      try {
-        setFavoritesLoading(true);
-        const storedFavorites = await AsyncStorage.getItem("favorites");
-        if (storedFavorites) {
-          setFavorites(JSON.parse(storedFavorites));
-        }
-      } catch (error) {
-        console.error("Error loading favorites from AsyncStorage:", error);
-      } finally {
-        setFavoritesLoading(false);
-      }
-    };
+    // Load cart data from storage
+    useEffect(() => {
+        const loadCart = async () => {
+            try {
+                const cartData = await AsyncStorage.getItem('cart');
+                if (cartData) {
+                    setCart(JSON.parse(cartData));
+                }
+            } catch (error) {
+                console.error('Failed to load cart data:', error);
+            } finally {
+                setCartLoading(false);
+            }
+        };
+        loadCart();
+    }, []);
 
-    loadCart();
-    loadFavorites();
-  }, []);
+    // Load favorites data from storage
+    useEffect(() => {
+        const loadFavorites = async () => {
+            try {
+                const favData = await AsyncStorage.getItem('favorites');
+                if (favData) {
+                    setFavorites(JSON.parse(favData));
+                }
+            } catch (error) {
+                console.error('Failed to load favorites data:', error);
+            } finally {
+                setFavoritesLoading(false);
+            }
+        };
+        loadFavorites();
+    }, []);
 
-  useEffect(() => {
-    const saveCart = async () => {
-      try {
-        await AsyncStorage.setItem("cart", JSON.stringify(cart));
-      } catch (error) {
-        console.error("Error saving cart to AsyncStorage:", error);
-      }
-    };
-    const saveFavorites = async () => {
-      try {
-        await AsyncStorage.setItem("favorites", JSON.stringify(favorites));
-      } catch (error) {
-        console.error("Error saving favorites to AsyncStorage:", error);
-      }
-    };
-    saveCart();
-    saveFavorites();
-  }, [cart, favorites]);
+    // Save cart data to storage
+    useEffect(() => {
+        const saveCart = async () => {
+            try {
+                await AsyncStorage.setItem('cart', JSON.stringify(cart));
+            } catch (error) {
+                console.error('Failed to save cart data:', error);
+            }
+        };
+        saveCart();
+    }, [cart]);
 
-  const addToCart = (item: CartItem) => {
-    setCart((prevCart) => {
-      const existingItemIndex = prevCart.findIndex(
-        (cartItem) => cartItem.id === item.id
-      );
+    // Save favorite data to storage
+    useEffect(() => {
+        const saveFavorites = async () => {
+            try {
+                await AsyncStorage.setItem('favorites', JSON.stringify(favorites));
+            } catch (error) {
+                console.error('Failed to save favorite data:', error);
+            }
+        };
+        saveFavorites();
+    }, [favorites]);
 
-      if (existingItemIndex > -1) {
-        const updatedCart = prevCart.map((cartItem, index) =>
-          index === existingItemIndex
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-        return updatedCart;
-      } else {
-        return [...prevCart, { ...item, quantity: 1 }];
-      }
-    });
-  };
-
-    const removeFromCart = (id: string) => {
-        setCart((prevCart) => {
-            const updatedCart = prevCart.filter((item) => item.id !== id);
-            return updatedCart;
+    const addToCart = (item: CartItem) => {
+      console.log("addToCart item:", item);
+      setCart((prevCart) => {
+          const existingItemIndex = prevCart.findIndex((cartItem) => cartItem.id === item.id);
+          if (existingItemIndex !== -1) {
+              const updatedCart = [...prevCart];
+              updatedCart[existingItemIndex].quantity += 1;
+              return updatedCart;
+          } else {
+              return [...prevCart, item];
+          }
       });
+  };
+
+    const removeFromCart = (itemId: string) => {
+        setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
     };
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    setCart((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
+    const updateQuantity = (itemId: string, quantity: number) => {
+        setCart((prevCart) => {
+            return prevCart.map((item) => {
+                if (item.id === itemId) {
+                    return { ...item, quantity: quantity };
+                }
+                return item;
+            });
+        });
+    };
 
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
+    const clearCart = () => {
+        setCart([]);
+    };
 
-  const addToFavorites = (item: CartItem) => {
-    setFavorites((prevFavorites) => {
-        if(!prevFavorites.includes(item.id)){
-            return [...prevFavorites, item.id];
-        }else {
+    const addToFavorites = (item: CartItem) => {
+        setFavorites((prevFavorites) => {
+            if (!prevFavorites.includes(item.id)) return [...prevFavorites, item.id];
             return prevFavorites;
-        }
-
-    });
-  };
-
-  const removeFromFavorites = (id: string) => {
-    setFavorites((prevFavorites) =>
-      prevFavorites.filter((itemId) => itemId !== id)
-    );
-  };
-
-    const clearFavorites = () => {
-        setFavorites([]);
+        });
+        // ensure that item exist in cart
+        addToCart(item);
     };
 
-  const isFavorite = (id: string) => favorites.includes(id);
+    const removeFromFavorites = (itemId: string) => {
+        setFavorites((prevFavorites) => prevFavorites.filter((id) => id !== itemId));
+    };
 
-  return (
-    <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        calculateTotal,
-        favorites,
-        addToFavorites,
-        removeFromFavorites,
-        isFavorite,
-          favoritesLoading,
-          clearFavorites,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+    const isFavorite = (itemId: string) => {
+        return favorites.includes(itemId);
+    };
+
+    const calculateTotal = () => {
+        return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+    };
+
+    return (
+        <CartContext.Provider
+            value={{
+                cart,
+                favorites,
+                addToCart,
+                removeFromCart,
+                updateQuantity,
+                clearCart,
+                addToFavorites,
+                removeFromFavorites,
+                isFavorite,
+                favoritesLoading,
+                cartLoading,
+                calculateTotal,
+            }}
+        >
+            {children}
+        </CartContext.Provider>
+    );
 };
 
-export const useCart = (): CartContextType => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
-  return context;
+const useCart = () => {
+    const context = useContext(CartContext);
+    if (!context) {
+        throw new Error('useCart must be used within a CartProvider');
+    }
+    return context;
 };
+
+export { CartProvider, useCart, CartItem };

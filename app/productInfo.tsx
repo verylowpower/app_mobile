@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     ScrollView,
     StyleSheet,
@@ -12,24 +12,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCart } from "./cart/cartContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-// Define the expected types for the route parameters.
-interface ProductInfoParams {
-    id?: string;
-    name?: string;
-    image?: string;
-    price?: string;
-    oldPrice?: string;
-    description?: string;
-}
-
 const ProductInfo = () => {
     const params = useLocalSearchParams();
+    console.log("ProductInfo params:", params);
     const router = useRouter();
     const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
         useCart();
 
     const [imageError, setImageError] = useState(false);
-    const [isFavoriteButtonRed, setIsFavoriteButtonRed] = useState(false); // State để kiểm tra màu
+    const [isFavoriteButtonRed, setIsFavoriteButtonRed] = useState(false);
 
     const handleGoBack = () => {
         router.back();
@@ -38,7 +29,6 @@ const ProductInfo = () => {
     const isValid = (value: any): boolean => {
         return value !== undefined && value !== null && value !== "";
     };
-
 
     const id = Array.isArray(params?.id) ? params.id[0] : params?.id || "";
     const name = Array.isArray(params?.name) ? params.name[0] : params?.name || "";
@@ -50,7 +40,14 @@ const ProductInfo = () => {
     const oldPriceParam = params?.oldPrice || "";
     const oldPrice = isValid(oldPriceParam) ? Number(oldPriceParam).toLocaleString() : "";
 
-    const description = params?.description || "";
+
+    const description = params?.description
+        ? Array.isArray(params.description)
+            ? params.description.join(", ")
+            : String(params.description)
+        : "No description available";
+
+    console.log("params.description:", params?.description);
 
     const handleAddToCart = () => {
         const item = {
@@ -59,6 +56,7 @@ const ProductInfo = () => {
             image,
             price,
             quantity: 1,
+            description,
         };
 
         if (isValid(item.id) && isValid(item.name) && isValid(item.image) && isValid(item.price)) {
@@ -66,9 +64,8 @@ const ProductInfo = () => {
             Alert.alert("Thông báo", "Sản phẩm đã thêm vào giỏ hàng!");
         } else {
             Alert.alert(
-                 "Error",
-                 `Missing properties: ${!isValid(item.id) ? "id " : ""
-                 }${!isValid(item.name) ? "name " : ""}${!isValid(item.image) ? "image " : ""}${!isValid(item.price) ? "price" : ""}`
+                "Error",
+                `Missing properties: ${!isValid(item.id) ? "id " : ""}${!isValid(item.name) ? "name " : ""}${!isValid(item.image) ? "image " : ""}${!isValid(item.price) ? "price" : ""}`
             );
         }
     };
@@ -80,27 +77,23 @@ const ProductInfo = () => {
             image,
             price,
             quantity: 1,
+            description,
         };
 
         if (isValid(item.id) && isValid(item.name) && isValid(item.image) && isValid(priceParam)) {
             if (isFavorite(item.id)) {
                 removeFromFavorites(item.id);
-                setIsFavoriteButtonRed(false); // Reset màu về xanh
-              //  Alert.alert("Thông báo", "Đã xóa khỏi yêu thích!");
+                setIsFavoriteButtonRed(false);
             } else {
                 addToFavorites(item);
-                setIsFavoriteButtonRed(true); // Chuyển màu thành đỏ
-               // Alert.alert("Thông báo", "Đã thêm vào yêu thích!");
+                setIsFavoriteButtonRed(true);
             }
-        } else {
-           // remove error message if you want
-            //  Alert.alert(
-            //      "Error",
-            //      `Missing properties: ${!isValid(item.id) ? "id " : ""
-            //      }${!isValid(item.name) ? "name " : ""}${!isValid(item.image) ? "image " : ""}${!isValid(priceParam) ? "price" : ""}`
-            // );
-         }
+        }
     };
+
+    useEffect(() => {
+        setIsFavoriteButtonRed(isFavorite(id));
+    }, [id, isFavorite]);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -130,7 +123,7 @@ const ProductInfo = () => {
                 onPress={handleAddToFavorites}
                 style={[
                     styles.addToFavoritesButton,
-                    isFavoriteButtonRed ? styles.addToFavoritesButtonRed : {}, // Thay đổi style dựa trên state
+                    isFavoriteButtonRed ? styles.addToFavoritesButtonRed : {},
                 ]}
             >
                 <Text style={styles.addToFavoritesText}>
@@ -142,76 +135,20 @@ const ProductInfo = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        backgroundColor: "#F5F5F5",
-        padding: 16,
-    },
-    goBack: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    goBackText: {
-        marginLeft: 8,
-        fontSize: 16,
-        color: "#000",
-    },
-    productContainer: {
-        alignItems: "center",
-        marginBottom: 32,
-    },
-    productImage: {
-        width: 200,
-        height: 200,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    productName: {
-        fontSize: 20,
-        fontWeight: "bold",
-        marginBottom: 8,
-    },
-    productPrice: {
-        fontSize: 16,
-        color: "#28a745",
-        marginBottom: 4,
-    },
-    productOldPrice: {
-        fontSize: 14,
-        color: "#dc3545",
-        textDecorationLine: "line-through",
-        marginBottom: 8,
-    },
-    productDescription: {
-        fontSize: 14,
-        color: "#6c757d",
-        textAlign: "center",
-    },
-    addToCartButton: {
-        backgroundColor: "#28a745",
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    addToCartText: {
-        color: "#fff",
-        fontSize: 16,
-    },
-    addToFavoritesButton: {
-         backgroundColor: "#007bff",
-         paddingVertical: 12,
-         borderRadius: 8,
-         alignItems: "center",
-    },
-      addToFavoritesButtonRed: {
-         backgroundColor: "#dc3545",
-     },
-    addToFavoritesText: {
-        color: "#fff",
-        fontSize: 16,
-    },
+    container: { flexGrow: 1, backgroundColor: "#F5F5F5", padding: 16 },
+    goBack: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+    goBackText: { marginLeft: 8, fontSize: 16, color: "#000" },
+    productContainer: { alignItems: "center", marginBottom: 32 },
+    productImage: { width: 200, height: 200, borderRadius: 8, marginBottom: 16 },
+    productName: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
+    productPrice: { fontSize: 16, color: "#28a745", marginBottom: 4 },
+    productOldPrice: { fontSize: 14, color: "#dc3545", textDecorationLine: "line-through", marginBottom: 8 },
+    productDescription: { fontSize: 14, color: "#6c757d", textAlign: "center" },
+    addToCartButton: { backgroundColor: "#28a745", paddingVertical: 12, borderRadius: 8, alignItems: "center", marginBottom: 16 },
+    addToCartText: { color: "#fff", fontSize: 16 },
+    addToFavoritesButton: { backgroundColor: "#007bff", paddingVertical: 12, borderRadius: 8, alignItems: "center" },
+    addToFavoritesButtonRed: { backgroundColor: "#dc3545" },
+    addToFavoritesText: { color: "#fff", fontSize: 16 },
 });
 
 export default ProductInfo;

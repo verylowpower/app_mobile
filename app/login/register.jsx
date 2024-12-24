@@ -1,10 +1,11 @@
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import React from 'react';
 import { Checkbox } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 
 export default function Register() {
   const [isPasswordVisible, setPasswordVisibility] = React.useState(false);
-  const [rememberMe, setRememberMe] = React.useState(false);
+  const router = useRouter();
 
   // Hàm hiển thị thông báo với tiêu đề tùy chỉnh
   const showCustomAlert = (title, message) => {
@@ -16,6 +17,15 @@ export default function Register() {
       ],
       { cancelable: true } // Cho phép người dùng hủy thông báo bằng cách nhấn ra ngoài
     );
+  };
+
+  const handleRegister = () => {
+    showCustomAlert('Success', 'Đăng Ký Thành Công');
+    router.replace('/login/login'); // Navigate back to login using replace
+  };
+
+  const handleLoginLink = () => {
+    router.replace('/login/login'); // Navigate back to login using replace
   };
 
   return (
@@ -48,7 +58,7 @@ export default function Register() {
             secureTextEntry={!isPasswordVisible}
           />
           <View style={styles.options}>
-          <View style={styles.optionItem}>
+            <View style={styles.optionItem}>
               <Checkbox
                 status={isPasswordVisible ? 'checked' : 'unchecked'}
                 onPress={() => setPasswordVisibility(!isPasswordVisible)}
@@ -57,13 +67,13 @@ export default function Register() {
               <Text style={styles.label}>Hiển thị mật khẩu</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleRegister}>
             <Text style={styles.buttonText}>Đăng Ký</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.loginText}>
           Đã có tài khoản?{' '}
-          <Text style={styles.link} onPress={() => showCustomAlert('Đăng Nhập', 'Đi tới đăng nhập')}>
+          <Text style={styles.link} onPress={handleLoginLink}>
             Đăng Nhập Ngay
           </Text>
         </Text>
