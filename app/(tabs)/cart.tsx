@@ -1,113 +1,191 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { useCart } from '../cart/cartContext'; // Import the hook
+// cart.tsx
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useCart } from '../cart/cartContext';
+import Checkout from '../cart/checkout';
 
 const Cart = () => {
-    const { cart, removeFromCart } = useCart(); // Access cart items
+  const { cart, updateQuantity, calculateTotal } = useCart();
+  const [showCheckout, setShowCheckout] = useState(false);
 
-    const handleRemoveItem = (id: string) => {
-        removeFromCart(id);
-    };
+  const handleGoToCheckout = () => {
+    setShowCheckout(true);
+  };
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Shopping Cart</Text>
-            {cart.length === 0 ? (
-                <Text style={styles.emptyCartText}>Your cart is empty.</Text>
-            ) : (
-                 <FlatList
-                    data={cart}
-                    renderItem={({ item }) => (
-                        <View style={styles.cartItem} key={item.id}>
-                            <Image source={{ uri: item.image }} style={styles.itemImage} />
-                           <View style={styles.itemDetails}>
-                               <Text style={styles.itemName}>{item.name}</Text>
-                                <View style={styles.priceQuantity}>
-                                   <Text style={styles.itemPrice}>${item.price}</Text>
-                                   <Text style={styles.itemQuantity}>x {item.quantity}</Text>
-                                </View>
-                            </View>
-                           <TouchableOpacity style={styles.deleteButton} onPress={() => handleRemoveItem(item.id)}>
-                                <Text style={styles.deleteButtonText}>X</Text>
-                           </TouchableOpacity>
+  const handleBackToCart = () => {
+      setShowCheckout(false);
+  };
 
-                        </View>
-                    )}
+  if (showCheckout) {
+      return <Checkout onBack={handleBackToCart} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.headerSection}>
+        <TouchableOpacity style={styles.backButton} onPress={() => console.log('Back button pressed')}>
+          <Ionicons name="arrow-back" size={24} color="#4CAF50" />
+        </TouchableOpacity>
+        <Ionicons name="basket" size={24} color="#4CAF50" style={styles.basketIcon} />
+        <Text style={styles.headerTitle}>Tổng Số Lượng Giỏ Hàng ({cart.length})</Text>
+      </View>
+
+      {/* Cart Items */}
+      <ScrollView style={styles.cartItemsSection}>
+        {cart.map((item) => (
+          <View key={item.id} style={styles.cartItem}>
+              {item.image && <Image source={{uri: item.image}} style={styles.itemImage} />}
+            <View style={styles.itemDetails}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemPrice}>Đơn giá: {item.price.toLocaleString()} đ</Text>
+              <View style={styles.quantitySection}>
+                <TextInput
+                  style={styles.quantityInput}
+                  keyboardType="numeric"
+                  value={item.quantity.toString()}
+                  onChangeText={(text) =>
+                    updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
+                  }
                 />
-            )}
+                <Text style={styles.itemTotalPrice}>
+                  {(item.price * item.quantity).toLocaleString()} đ
+                </Text>
+              </View>
             </View>
+          </View>
+        ))}
+      </ScrollView>
 
-    );
+      {/* Footer Section */}
+      <View style={styles.footerSection}>
+        <Text style={styles.totalText}>Tổng cộng: {calculateTotal().toLocaleString()} đ</Text>
+        <TouchableOpacity style={styles.checkoutButton} onPress={handleGoToCheckout}>
+          <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
         backgroundColor: '#fff',
     },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        fontFamily: 'outfit-bold',
+    headerSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        backgroundColor: '#f8f8f8',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
     },
-    emptyCartText: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginTop: 20,
-        fontFamily: 'outfit-medium',
+    backButton: {
+        position: 'absolute',
+        left: 16,
+    },
+    basketIcon: {
+        marginRight: 8,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+    },
+    cartItemsSection: {
+        flex: 1,
+        paddingHorizontal: 16,
+        padding: 5,
     },
     cartItem: {
         flexDirection: 'row',
+        backgroundColor: '#fff',
+        borderRadius: 10,
         padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-         alignItems: 'center'
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 5,
+        elevation: 3,
     },
-     itemImage: {
-        width: 80,
-        height: 80,
-        borderRadius: 8,
-         marginRight: 10
+    itemImage: {
+        width: 60,
+        height: 60,
+        marginRight: 10,
+        borderRadius: 5,
     },
     itemDetails: {
         flex: 1,
         justifyContent: 'center',
     },
     itemName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        fontFamily: 'outfit-medium',
+        marginBottom: 5,
     },
     itemPrice: {
-        fontSize: 16,
-        color: '#888',
-        fontFamily: 'outfit',
+        fontSize: 14,
+        color: '#777',
+        marginBottom: 5,
     },
-     itemQuantity: {
-        fontSize: 16,
-        color: '#888',
-        fontFamily: 'outfit-medium',
-        marginLeft: 5
-    },
-      priceQuantity: {
-          flexDirection: 'row',
-          alignItems: 'center'
-      },
-     deleteButton: {
-        backgroundColor: '#DC3545',
-        borderRadius: 15,
-         width: 30,
-         height: 30,
+    quantitySection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-         justifyContent: 'center',
-         marginLeft: 'auto'
     },
-     deleteButtonText: {
-        color: '#fff',
+    quantityInput: {
+        width: 60,
+        height: 40,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        backgroundColor: '#f0f0f0',
+        borderRadius: 5,
+        textAlign: 'center',
+        marginRight: 10,
+    },
+    itemTotalPrice: {
+        fontSize: 14,
         fontWeight: 'bold',
-        fontSize: 15,
+        color: '#333',
+    },
+    footerSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: -2 },
+        shadowRadius: 5,
+        elevation: 5,
+    },
+    totalText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    checkoutButton: {
+        backgroundColor: '#4CAF50',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+    },
+    checkoutButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
+
 export default Cart;

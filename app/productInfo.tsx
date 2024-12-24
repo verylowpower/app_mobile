@@ -1,82 +1,217 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import ProductCard from './product/productCard';
-import { useCart } from './cart/cartContext'; // Import useCart
+import React, { useState } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Image,
+    Text,
+    View,
+    TouchableOpacity,
+    Alert,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCart } from "./cart/cartContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+// Define the expected types for the route parameters.
+interface ProductInfoParams {
+    id?: string;
+    name?: string;
+    image?: string;
+    price?: string;
+    oldPrice?: string;
+    description?: string;
+}
 
 const ProductInfo = () => {
-  const params = useLocalSearchParams<Record<string, string | string[]>>();
-  const router = useRouter();
-  const { addToCart } = useCart(); // Get addToCart from context
+    const params = useLocalSearchParams();
+    const router = useRouter();
+    const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
+        useCart();
 
-  const handleGoBack = () => {
-    router.back();
-  };
+    const [imageError, setImageError] = useState(false);
+    const [isFavoriteButtonRed, setIsFavoriteButtonRed] = useState(false); // State để kiểm tra màu
 
- const handleAddToCart = () => {
-    const item = {
-      id: Array.isArray(params.id) ? params.id[0] : (params.id || ""), // use optional chaining to check for undefined
-      name: Array.isArray(params.name) ? params.name[0] : (params.name || ""),
-      image: Array.isArray(params.image) ? params.image[0] : (params.image || ""),
-      price: Array.isArray(params.price) ? params.price[0] : (params.price || ""),
-       quantity: 1 // add quantity here
+    const handleGoBack = () => {
+        router.back();
     };
-    // validate item properties
-    if (item.id && item.name && item.image && item.price){
-      addToCart(item);
-      Alert.alert('Thông báo','Sản phẩm đã thêm vào giỏ hàng!');
-    } else {
-      Alert.alert('Error','Missing one of the following properties id, name, image, price');
-    }
 
-  };
+    const isValid = (value: any): boolean => {
+        return value !== undefined && value !== null && value !== "";
+    };
 
-  const handleAddToFavorites = () => {
-    Alert.alert('Thông báo','Đã thêm vào yêu thích!');
-  };
 
-  const name = Array.isArray(params.name) ? params.name[0] : (params.name || "");
-  const image = Array.isArray(params.image) ? params.image[0] : (params.image || "");
-  const description = Array.isArray(params.description) ? params.description[0] : (params.description || "");
-  const price = Array.isArray(params.price) ? params.price[0] : (params.price || "");
-  const oldPrice = Array.isArray(params.oldPrice) ? params.oldPrice[0] : (params.oldPrice || "");
-  const id = Array.isArray(params.id) ? params.id[0] : (params.id || "");
+    const id = Array.isArray(params?.id) ? params.id[0] : params?.id || "";
+    const name = Array.isArray(params?.name) ? params.name[0] : params?.name || "";
+    const image = Array.isArray(params?.image) ? params.image[0] : params?.image || "";
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ProductCard
-        id={id}
-        name={name}
-        image={image}
-        price={price}
-        oldPrice={oldPrice}
-        description={description}
-        onAddToCart={handleAddToCart}
-        onAddToFavorites={handleAddToFavorites}
-      />
-    </ScrollView>
-  );
+    const priceParam = params?.price || "";
+    const price = isValid(priceParam) ? Number(priceParam) : 0;
+
+    const oldPriceParam = params?.oldPrice || "";
+    const oldPrice = isValid(oldPriceParam) ? Number(oldPriceParam).toLocaleString() : "";
+
+    const description = params?.description || "";
+
+    const handleAddToCart = () => {
+        const item = {
+            id,
+            name,
+            image,
+            price,
+            quantity: 1,
+        };
+
+        if (isValid(item.id) && isValid(item.name) && isValid(item.image) && isValid(item.price)) {
+            addToCart(item);
+            Alert.alert("Thông báo", "Sản phẩm đã thêm vào giỏ hàng!");
+        } else {
+            Alert.alert(
+                 "Error",
+                 `Missing properties: ${!isValid(item.id) ? "id " : ""
+                 }${!isValid(item.name) ? "name " : ""}${!isValid(item.image) ? "image " : ""}${!isValid(item.price) ? "price" : ""}`
+            );
+        }
+    };
+
+    const handleAddToFavorites = () => {
+        const item = {
+            id,
+            name,
+            image,
+            price,
+            quantity: 1,
+        };
+
+        if (isValid(item.id) && isValid(item.name) && isValid(item.image) && isValid(priceParam)) {
+            if (isFavorite(item.id)) {
+                removeFromFavorites(item.id);
+                setIsFavoriteButtonRed(false); // Reset màu về xanh
+              //  Alert.alert("Thông báo", "Đã xóa khỏi yêu thích!");
+            } else {
+                addToFavorites(item);
+                setIsFavoriteButtonRed(true); // Chuyển màu thành đỏ
+               // Alert.alert("Thông báo", "Đã thêm vào yêu thích!");
+            }
+        } else {
+           // remove error message if you want
+            //  Alert.alert(
+            //      "Error",
+            //      `Missing properties: ${!isValid(item.id) ? "id " : ""
+            //      }${!isValid(item.name) ? "name " : ""}${!isValid(item.image) ? "image " : ""}${!isValid(priceParam) ? "price" : ""}`
+            // );
+         }
+    };
+
+    return (
+        <ScrollView contentContainerStyle={styles.container}>
+            <TouchableOpacity onPress={handleGoBack} style={styles.goBack}>
+                <Ionicons name="arrow-back" size={24} color="#000" />
+                <Text style={styles.goBackText}>Back</Text>
+            </TouchableOpacity>
+            <View style={styles.productContainer}>
+                <Image
+                    source={{
+                        uri: imageError
+                            ? "https://via.placeholder.com/200?text=No+Image"
+                            : image,
+                    }}
+                    style={styles.productImage}
+                    onError={() => setImageError(true)}
+                />
+                <Text style={styles.productName}>{name}</Text>
+                <Text style={styles.productPrice}>{price} đ</Text>
+                {oldPrice && <Text style={styles.productOldPrice}>Old Price: {oldPrice} đ</Text>}
+                <Text style={styles.productDescription}>{description}</Text>
+            </View>
+            <TouchableOpacity onPress={handleAddToCart} style={styles.addToCartButton}>
+                <Text style={styles.addToCartText}>Add to Cart</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                onPress={handleAddToFavorites}
+                style={[
+                    styles.addToFavoritesButton,
+                    isFavoriteButtonRed ? styles.addToFavoritesButtonRed : {}, // Thay đổi style dựa trên state
+                ]}
+            >
+                <Text style={styles.addToFavoritesText}>
+                    {isFavorite(id) ? "Xóa khỏi Yêu Thích" : "Thêm vào Yêu Thích"}
+                </Text>
+            </TouchableOpacity>
+        </ScrollView>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#F5F5F5',
-    padding: 16,
-    alignItems: 'center',
-  },
-  backButton: {
-    backgroundColor: '#6C757D',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
-  },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+    container: {
+        flexGrow: 1,
+        backgroundColor: "#F5F5F5",
+        padding: 16,
+    },
+    goBack: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    goBackText: {
+        marginLeft: 8,
+        fontSize: 16,
+        color: "#000",
+    },
+    productContainer: {
+        alignItems: "center",
+        marginBottom: 32,
+    },
+    productImage: {
+        width: 200,
+        height: 200,
+        borderRadius: 8,
+        marginBottom: 16,
+    },
+    productName: {
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 8,
+    },
+    productPrice: {
+        fontSize: 16,
+        color: "#28a745",
+        marginBottom: 4,
+    },
+    productOldPrice: {
+        fontSize: 14,
+        color: "#dc3545",
+        textDecorationLine: "line-through",
+        marginBottom: 8,
+    },
+    productDescription: {
+        fontSize: 14,
+        color: "#6c757d",
+        textAlign: "center",
+    },
+    addToCartButton: {
+        backgroundColor: "#28a745",
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    addToCartText: {
+        color: "#fff",
+        fontSize: 16,
+    },
+    addToFavoritesButton: {
+         backgroundColor: "#007bff",
+         paddingVertical: 12,
+         borderRadius: 8,
+         alignItems: "center",
+    },
+      addToFavoritesButtonRed: {
+         backgroundColor: "#dc3545",
+     },
+    addToFavoritesText: {
+        color: "#fff",
+        fontSize: 16,
+    },
 });
 
 export default ProductInfo;
