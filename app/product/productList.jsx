@@ -16,7 +16,7 @@ const ProductList = ({ searchText }) => {
         {
             id: "1",
             name: "Fresh Mango",
-            image: "https://via.placeholder.com/200",
+            image: "./../../assets/single-banner.jpg",
             price: "5000",
             oldPrice: "60000",
             description: "Delicious and juicy mangoes",
