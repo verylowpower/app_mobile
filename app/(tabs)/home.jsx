@@ -16,8 +16,8 @@ const ITEM_HEIGHT = ITEM_WIDTH * 0.5;
 
 const banners = [
     { id: '1', image: 'https://via.placeholder.com/300x150' },
-    { id: '2', image: 'https://via.placeholder.com/200x150' },
-    { id: '3', image: 'https://via.placeholder.com/100x150' },
+    { id: '2', image: 'https://via.placeholder.com/300x150' },
+    { id: '3', image: 'https://via.placeholder.com/300x150' },
 ];
 
 const Home = () => {
