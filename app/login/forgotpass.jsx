@@ -1,155 +1,192 @@
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
-import React, { useState } from 'react';
+import React from 'react';
+import { Checkbox } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { forgotPassword } from '../components/authService';
 
 export default function ForgotPass() {
-    const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [email, setEmail] = React.useState('');
+  const [oldPassword, setOldPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [isPasswordVisible, setPasswordVisibility] = React.useState(false); // State kiểm soát hiển thị mật khẩu
 
-    const showCustomAlert = (title, message) => {
-        Alert.alert(
-            title,
-            message,
-            [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
-            { cancelable: true }
-        );
-    };
+  // Hàm hiển thị thông báo với tiêu đề tùy chỉnh
+  const showCustomAlert = (title, message) => {
+    Alert.alert(
+      title, // Tiêu đề
+      message, // Nội dung
+      [
+        { text: 'OK', onPress: () => console.log('OK Pressed') },
+      ,
+      { cancelable: true } // Cho phép người dùng hủy thông báo bằng cách nhấn ra ngoài
+    ]);
+  };
 
-    // forgotpass.jsx
- const handleForgotPassword = async () => {
-    if (!email) {
-        showCustomAlert('Lỗi', 'Vui lòng điền địa chỉ email.');
-        return;
+  // Hàm kiểm tra và gửi yêu cầu thay đổi mật khẩu
+  const handleResetPassword = () => {
+    if (newPassword === confirmPassword) {
+      showCustomAlert('Success', 'Mật khẩu đã được thay đổi thành công.');
+      router.replace('/login/login'); // Navigate back to login using replace
+    } else {
+      showCustomAlert('Error', 'Mật khẩu mới và xác nhận mật khẩu không khớp.');
     }
+  };
 
-    const trimmedEmail = email.trim();
-    setIsLoading(true);
-    try {
-      console.log('Sending forgot password request for email:', trimmedEmail); // Log email before request
-        const response = await forgotPassword(trimmedEmail);
-         console.log('API Response:', response); // Log response
-        if (response) {
-            showCustomAlert('Thành Công', 'Chúng tôi đã gửi đường dẫn đặt lại mật khẩu đến email của bạn');
-            router.replace('/login/login');
-        } else {
-            showCustomAlert('Lỗi', 'Gửi yêu cầu đặt lại mật khẩu không thành công. Vui lòng thử lại.');
-        }
-    } catch (error) {
-         console.error('Error forgot password:', error);
-         console.log('Error', error); // Log lỗi đầy đủ
-        showCustomAlert('Lỗi', error.message || 'Có lỗi xảy ra trong quá trình gửi email đặt lại mật khẩu, vui lòng thử lại');
-    }
-    finally {
-        setIsLoading(false);
-    }
-};
-    const handleLoginLink = () => {
-        router.replace('/login/login');
-    };
+  const handleLoginLink = () => {
+      router.replace('/login/login'); // Navigate back to login using replace
+  }
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.logoSection}>
-                <Image
-                    source={require('./../../assets/images/logo.jpg')}
-                    style={styles.logoImage}
-                />
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.logoSection}>
+        <Image
+          source={require('./../../assets/images/logo.jpg')} // Đảm bảo đường dẫn này đúng
+          style={styles.logoImage}
+        />
+      </View>
+      <View style={styles.passwordResetBox}>
+        <Text style={styles.title}>Quên Mật Khẩu</Text>
+        <Text style={styles.subtitle}>Nhập thông tin để đặt lại mật khẩu của bạn</Text>
+        <View>
+          <TextInput
+            style={styles.input}
+            placeholder="Địa Chỉ Email"
+            placeholderTextColor="#888"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Mật Khẩu Cũ"
+            placeholderTextColor="#888"
+            secureTextEntry={!isPasswordVisible}
+            value={oldPassword}
+            onChangeText={setOldPassword}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Mật Khẩu Mới"
+            placeholderTextColor="#888"
+            secureTextEntry={!isPasswordVisible}
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Xác Nhận Mật Khẩu Mới"
+            placeholderTextColor="#888"
+            secureTextEntry={!isPasswordVisible}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <View style={styles.options}>
+            <View style={styles.optionItem}>
+              <Checkbox
+                status={isPasswordVisible ? 'checked' : 'unchecked'}
+                onPress={() => setPasswordVisibility(!isPasswordVisible)}
+                color="#4CAF50"
+              />
+              <Text style={styles.label}>Hiển thị mật khẩu</Text>
             </View>
-            <View style={styles.passwordResetBox}>
-                <Text style={styles.title}>Quên Mật Khẩu</Text>
-                <Text style={styles.subtitle}>Nhập địa chỉ email của bạn</Text>
-                <View>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Địa Chỉ Email"
-                        placeholderTextColor="#888"
-                        keyboardType="email-address"
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-                    <TouchableOpacity style={styles.button} onPress={handleForgotPassword} disabled={isLoading}>
-                      <Text style={styles.buttonText}>{isLoading ? 'Đang Xử Lý...' : 'Đặt Lại Mật Khẩu'}</Text>
-                    </TouchableOpacity>
-                </View>
-                <Text style={styles.loginText}>
-                    Đã nhớ mật khẩu?{' '}
-                    <Text style={styles.link} onPress={handleLoginLink}>
-                        Đăng Nhập Ngay
-                    </Text>
-                </Text>
-            </View>
-        </ScrollView>
-    );
+          </View>
+          <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
+            <Text style={styles.buttonText}>Đặt Lại Mật Khẩu</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.loginText}>
+          Đã nhớ mật khẩu?{' '}
+          <Text style={styles.link} onPress={handleLoginLink}>
+            Đăng Nhập Ngay
+          </Text>
+        </Text>
+      </View>
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        backgroundColor: '#fff',
-        padding: 16,
-        justifyContent: 'flex-start',
-    },
-    logoSection: {
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    logoImage: {
-        width: 170,
-        height: 170,
-        resizeMode: 'contain',
-    },
-    passwordResetBox: {
-        backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 15,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 10,
-        elevation: 5,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#4CAF50',
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 16,
-        textAlign: 'center',
-        color: '#777',
-        marginBottom: 20,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 20,
-        padding: 8,
-        marginBottom: 12,
-        fontSize: 16,
-    },
-    button: {
-        backgroundColor: '#4CAF50',
-        padding: 14,
-        borderRadius: 20,
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    loginText: {
-        textAlign: 'center',
-        marginTop: 20,
-        fontSize: 14,
-        color: '#777',
-    },
-    link: {
-        color: '#4CAF50',
-        fontWeight: 'bold',
-    },
+  container: {
+    flexGrow: 1,
+    backgroundColor: '#fff',
+    padding: 16,
+    justifyContent: 'flex-start',
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoImage: {
+    width: 170,
+    height: 170,
+    resizeMode: 'contain',
+  },
+  passwordResetBox: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#777',
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 20,
+    padding: 8,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  options: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  label: {
+    marginLeft: 5,
+    fontSize: 15,
+    color: '#666',
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    padding: 14,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loginText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 14,
+    color: '#777',
+  },
+  link: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
 });
