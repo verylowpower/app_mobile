@@ -109,12 +109,12 @@ export default function Checkout({ onBack }) {
                                 </View>
                                 <View style={styles.paymentOption}>
                                     <RadioButton
-                                        value="Paypal"
+                                        value="VNPay"
                                         status={paymentMethod === 'Paypal' ? 'checked' : 'unchecked'}
                                         onPress={() => setPaymentMethod('Paypal')}
                                         color="#4CAF50"
                                     />
-                                    <Text style={styles.option}>Thanh toán với Paypal</Text>
+                                    <Text style={styles.option}>Thanh toán với VNPay</Text>
                                 </View>
                             </View>
                       </View>

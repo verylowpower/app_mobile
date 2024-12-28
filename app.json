@@ -36,6 +36,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "API_BASE_URL": "http://192.168.2.2:9056/product-service/api",
+      "IMAGE_BASE_URL": "http://192.168.2.2:9056/product-service/images"
     }
   }
 }

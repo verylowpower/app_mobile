@@ -15,9 +15,9 @@ const ITEM_WIDTH = width * 0.95;
 const ITEM_HEIGHT = ITEM_WIDTH * 0.5;
 
 const banners = [
-    { id: '1', image: '/../../assets/3.png' },
-    { id: '2', image: './../../assets/newsletter.jpg' },
-    { id: '3', image: './../../assets/single-banner.jpg' },
+    { id: '1', image: 'https://via.placeholder.com/300x150' },
+    { id: '2', image: 'https://via.placeholder.com/300x150' },
+    { id: '3', image: 'https://via.placeholder.com/300x150' },
 ];
 
 const Home = () => {

@@ -11,25 +11,35 @@ const handleFetch = async (url, options) => {
         const response = await fetch(url, options);
 
         if (!response.ok) {
-            let errorMessage = `HTTP error! Status: ${response.status}`;
-            try {
-                const errorBody = await response.json();
-                errorMessage += ` - ${errorBody.message || JSON.stringify(errorBody)}`;
-            } catch (jsonError) {
-                const errorText = await response.text();
-                errorMessage += ` - ${errorText}`;
+             let errorMessage = `HTTP error! Status: ${response.status}`;
+             let errorBody;
+             try {
+               const contentType = response.headers.get('content-type');
+               if (contentType && contentType.includes('application/json')) {
+                    errorBody = await response.json();
+                    errorMessage += ` - ${errorBody.message || JSON.stringify(errorBody)}`;
+                } else {
+                     errorBody = await response.text();
+                     errorMessage += ` - ${errorBody}`;
+                }
+             } catch(jsonError) {
+                  try {
+                       const textError = await response.text();
+                       errorMessage += ` - ${textError}`;
+                  } catch(textError){
+                     errorMessage += ` - Could not parse the error message.`
+                  }
             }
-
             console.error("Fetch error:", errorMessage, { url, options, response });
             throw new Error(errorMessage);
-        }
 
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return await response.json();
-        } else {
-            return await response.text();
         }
+         const contentType = response.headers.get('content-type');
+         if (contentType && contentType.includes('application/json')) {
+             return await response.json();
+          } else {
+              return await response.text();
+         }
     } catch (error) {
         console.error("Fetch error:", error, { url, options });
         throw error;
@@ -43,6 +53,7 @@ const TOKEN_KEY = "authToken";
 const setToken = async (token) => {
      try {
         await AsyncStorage.setItem(TOKEN_KEY, token);
+        console.log("Token set successfully in AsyncStorage:", token)
      } catch (e) {
          console.error("Error setToken:", e);
      }
@@ -50,9 +61,11 @@ const setToken = async (token) => {
 
 const getToken = async () => {
      try {
-        return await AsyncStorage.getItem(TOKEN_KEY);
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+        
+        return token;
      } catch (e) {
-         console.error("Error getToken:", e);
+         
          return null;
      }
 };
@@ -60,6 +73,7 @@ const getToken = async () => {
 const removeToken = async () => {
       try {
         await AsyncStorage.removeItem(TOKEN_KEY);
+        console.log("Token removed successfully from AsyncStorage")
      } catch (e) {
         console.error("Error removeToken:", e);
      }
@@ -104,6 +118,15 @@ export const loginUser = async (credentials) => {
 
     if (response && response.token) {
         await setToken(response.token);
+        console.log("Token saved:", response.token);
+
+        const storedToken = await getToken();
+         console.log("Token from AsyncStorage:", storedToken);
+          if (storedToken) {
+              console.log("Token saved")
+          } else{
+              console.log("Error: Token save error")
+          }
     }
 
     return response;
@@ -117,7 +140,7 @@ export const changePassword = async (newPasswordData) => {
 
     console.log('Changing password with data:', newPasswordData);
     return handleFetch(`${BASE_URL}/account/change-password`, {
-        method: 'PUT',
+        method: 'POST',  // Changed to PUT
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
@@ -147,4 +170,37 @@ export const authenticatedFetch = async (url, options = {}) => {
 export const logoutUser = async () => {
     console.log('Logging out user and removing token');
      await removeToken();
+};
+
+
+// Profile Service functions (Moved from profileService.js)
+
+export const getProfile = async () => {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('User is not authenticated. Token not found.');
+    }
+    return handleFetch(`${BASE_URL}/profile/infor`,{
+         method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+};
+
+
+export const updateProfile = async (profileData) => {
+    const token = await getToken();
+    if (!token) {
+        throw new Error('User is not authenticated. Token not found.');
+    }
+    return handleFetch(`${BASE_URL}/profile/update`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+    });
 };

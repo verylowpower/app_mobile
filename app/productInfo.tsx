@@ -7,94 +7,132 @@ import {
     View,
     TouchableOpacity,
     Alert,
+    ActivityIndicator
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCart } from "./cart/cartContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import productService from "./components/productService";
+
+interface Product {
+    productId: number;
+    productName: string;
+    sku: string | null;
+    price: number;
+    quantity: number;
+    discount: number;
+    description: string;
+    productType: string;
+    imageUrl: string | null;
+}
+
+interface ProductResponse {
+    productId: number;
+    productName: string;
+    sku: string | null;
+    price: number;
+    quantity: number;
+    discount: number;
+    description: string;
+    productType: string;
+    imageUrl: string | null;
+}
+
+
+const DEFAULT_IMAGE_URL = "https://via.placeholder.com/200?text=No+Image";
 
 const ProductInfo = () => {
     const params = useLocalSearchParams();
-    console.log("ProductInfo params:", params);
     const router = useRouter();
-    const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
-        useCart();
+    const { addToCart, addToFavorites, removeFromFavorites, isFavorite } = useCart();
 
     const [imageError, setImageError] = useState(false);
     const [isFavoriteButtonRed, setIsFavoriteButtonRed] = useState(false);
+    const [product, setProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const handleGoBack = () => {
         router.back();
     };
 
-    const isValid = (value: any): boolean => {
-        return value !== undefined && value !== null && value !== "";
-    };
+    const id = Array.isArray(params?.productId) ? params.productId[0] : params?.productId || "";
 
-    const id = Array.isArray(params?.id) ? params.id[0] : params?.id || "";
-    const name = Array.isArray(params?.name) ? params.name[0] : params?.name || "";
-    const image = Array.isArray(params?.image) ? params.image[0] : params?.image || "";
+    useEffect(() => {
+        const fetchProductDetails = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const data: ProductResponse = await productService.getProductDetails(id);
+                 const formattedProduct: Product = {
+                    ...data,
+                    imageUrl: data.imageUrl || null
+                 };
+                 setProduct(formattedProduct);
 
-    const priceParam = params?.price || "";
-    const price = isValid(priceParam) ? Number(priceParam) : 0;
+            } catch (err: any) {
+                setError(err.message || "Failed to fetch product details");
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) {
+            fetchProductDetails();
+        }
+    }, [id]);
 
-    const oldPriceParam = params?.oldPrice || "";
-    const oldPrice = isValid(oldPriceParam) ? Number(oldPriceParam).toLocaleString() : "";
-
-
-    const description = params?.description
-        ? Array.isArray(params.description)
-            ? params.description.join(", ")
-            : String(params.description)
-        : "No description available";
-
-    console.log("params.description:", params?.description);
+    useEffect(() => {
+        if (product) {
+            setIsFavoriteButtonRed(isFavorite(String(product.productId)));
+        }
+    }, [product, isFavorite]);
 
     const handleAddToCart = () => {
-        const item = {
-            id,
-            name,
-            image,
-            price,
-            quantity: 1,
-            description,
-        };
-
-        if (isValid(item.id) && isValid(item.name) && isValid(item.image) && isValid(item.price)) {
-            addToCart(item);
+        if (product) {
+            addToCart({
+                id: String(product.productId),
+                name: product.productName,
+                image: product.imageUrl || DEFAULT_IMAGE_URL,
+                price: product.price,
+                quantity: 1,
+                description: product.description,
+            });
             Alert.alert("Thông báo", "Sản phẩm đã thêm vào giỏ hàng!");
-        } else {
-            Alert.alert(
-                "Error",
-                `Missing properties: ${!isValid(item.id) ? "id " : ""}${!isValid(item.name) ? "name " : ""}${!isValid(item.image) ? "image " : ""}${!isValid(item.price) ? "price" : ""}`
-            );
         }
     };
 
     const handleAddToFavorites = () => {
-        const item = {
-            id,
-            name,
-            image,
-            price,
-            quantity: 1,
-            description,
-        };
-
-        if (isValid(item.id) && isValid(item.name) && isValid(item.image) && isValid(priceParam)) {
-            if (isFavorite(item.id)) {
-                removeFromFavorites(item.id);
+        if (product) {
+            const productId = String(product.productId);
+            if (isFavorite(productId)) {
+                removeFromFavorites(productId);
                 setIsFavoriteButtonRed(false);
             } else {
-                addToFavorites(item);
+                addToFavorites({
+                    id: productId,
+                    name: product.productName,
+                    image: product.imageUrl || DEFAULT_IMAGE_URL,
+                    price: product.price,
+                    quantity: 1,
+                    description: product.description,
+                });
                 setIsFavoriteButtonRed(true);
             }
         }
     };
 
-    useEffect(() => {
-        setIsFavoriteButtonRed(isFavorite(id));
-    }, [id, isFavorite]);
+    if (loading) {
+        return <View style={styles.centered}><ActivityIndicator size="large" /></View>;
+    }
 
+    if (error) {
+        return <View style={styles.centered}><Text>Error: {error}</Text></View>;
+    }
+    if (!product) {
+        return <View style={styles.centered}><Text>No product data</Text></View>;
+    }
+
+    //console.log("Product Image URL:", product.imageUrl)
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <TouchableOpacity onPress={handleGoBack} style={styles.goBack}>
@@ -102,19 +140,22 @@ const ProductInfo = () => {
                 <Text style={styles.goBackText}>Back</Text>
             </TouchableOpacity>
             <View style={styles.productContainer}>
-                <Image
-                    source={{
-                        uri: imageError
-                            ? "https://via.placeholder.com/200?text=No+Image"
-                            : image,
-                    }}
-                    style={styles.productImage}
-                    onError={() => setImageError(true)}
-                />
-                <Text style={styles.productName}>{name}</Text>
-                <Text style={styles.productPrice}>{price} đ</Text>
-                {oldPrice && <Text style={styles.productOldPrice}>Old Price: {oldPrice} đ</Text>}
-                <Text style={styles.productDescription}>{description}</Text>
+                {product.imageUrl ? (
+                     <Image
+                       source={{
+                           uri: product.imageUrl
+                       }}
+                       style={styles.productImage}
+
+                   />
+                ) : (
+                   <View style={[styles.productImage, { backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center'}]}>
+                       <Text>No Image</Text>
+                   </View>
+               )}
+                <Text style={styles.productName}>{product.productName}</Text>
+                <Text style={styles.productPrice}>{product.price} đ</Text>
+                <Text style={styles.productDescription}>{product.description}</Text>
             </View>
             <TouchableOpacity onPress={handleAddToCart} style={styles.addToCartButton}>
                 <Text style={styles.addToCartText}>Add to Cart</Text>
@@ -127,7 +168,7 @@ const ProductInfo = () => {
                 ]}
             >
                 <Text style={styles.addToFavoritesText}>
-                    {isFavorite(id) ? "Xóa khỏi Yêu Thích" : "Thêm vào Yêu Thích"}
+                    {isFavoriteButtonRed ? "Remove from Favorites" : "Add to Favorites"}
                 </Text>
             </TouchableOpacity>
         </ScrollView>
@@ -142,13 +183,17 @@ const styles = StyleSheet.create({
     productImage: { width: 200, height: 200, borderRadius: 8, marginBottom: 16 },
     productName: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
     productPrice: { fontSize: 16, color: "#28a745", marginBottom: 4 },
-    productOldPrice: { fontSize: 14, color: "#dc3545", textDecorationLine: "line-through", marginBottom: 8 },
     productDescription: { fontSize: 14, color: "#6c757d", textAlign: "center" },
     addToCartButton: { backgroundColor: "#28a745", paddingVertical: 12, borderRadius: 8, alignItems: "center", marginBottom: 16 },
     addToCartText: { color: "#fff", fontSize: 16 },
     addToFavoritesButton: { backgroundColor: "#007bff", paddingVertical: 12, borderRadius: 8, alignItems: "center" },
     addToFavoritesButtonRed: { backgroundColor: "#dc3545" },
     addToFavoritesText: { color: "#fff", fontSize: 16 },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
 });
 
 export default ProductInfo;

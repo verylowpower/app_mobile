@@ -38,14 +38,6 @@ export default function Register() {
             showCustomAlert('Lỗi', errorMessage);
             return;
         }
-        try {
-            const response = await registerUser(userData);
-            console.log('API Response:', response); // Log phản hồi từ API
-        } catch (error) {
-            console.error('Registration error:', JSON.stringify(error, null, 2)); // Log chi tiết lỗi
-            showCustomAlert('Lỗi', error.message || 'Có lỗi xảy ra trong quá trình đăng ký.');
-        }
-        
 
         setIsLoading(true);
         try {
