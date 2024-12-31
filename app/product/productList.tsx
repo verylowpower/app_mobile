@@ -10,10 +10,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import productService from '../components/productService'; // Assuming this is a service, not a Component
+import productService from '../components/productService';
 
-
-// Define the Product interface
+interface ProductImage {
+    id?: number;
+    url: string;
+}
 interface Product {
     productId: number;
     productName: string;
@@ -23,8 +25,9 @@ interface Product {
     discount: number;
     description: string;
     productType: string;
-    imageUrl: string; // Make imageUrl non-nullable
+    images: ProductImage[];
     categoryName: string;
+    categoryId: number;
 }
 
 interface ProductResponse {
@@ -36,31 +39,81 @@ interface ProductResponse {
     discount: number;
     description: string;
     productType: string;
-    imageUrl: string | null; // imageUrl is nullable from the service
+    imageUrl: string[] | string | null;
     categoryName: string;
+    categoryId: number;
+}
+
+interface Category {
+    categoryName: string;
+    count: number;
+    categoryId: number;
 }
 
 const ProductList = ({ searchText }: { searchText: string }) => {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-    const [activeTag, setActiveTag] = useState<string | null>(null);
+    const [activeTag, setActiveTag] = useState<number | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch all products and include their images
-    const fetchProducts = async () => {
+
+    const fetchProducts = async (categoryId: number | null = null) => {
+      setLoading(true);
+      setError(null);
+      try {
+        let productsData: ProductResponse[];
+        if (categoryId) {
+          productsData = await productService.getProductsByCategoryId(categoryId);
+        } else {
+          productsData = await productService.getAllProducts();
+        }
+        const formattedProducts: Product[] = productsData.map(product => {
+          let images: ProductImage[] = [];
+          if (Array.isArray(product.imageUrl)) {
+            images = product.imageUrl.map((url, index) => ({
+              id: index,
+              url: url
+                ? url.replace('localhost', '192.168.2.4')
+                : '',
+            }));
+          } else if (typeof product.imageUrl === 'string') {
+            images = [{ id: 0, url: product.imageUrl.replace('localhost', '192.168.2.4') }]
+          }
+          return {
+            ...product,
+            images: images,
+            productId: product.productId,
+            productName: product.productName,
+            sku: product.sku,
+            price: product.price,
+            quantity: product.quantity,
+            discount: product.discount,
+            description: product.description,
+            productType: product.productType,
+            categoryName: product.categoryName,
+            categoryId: product.categoryId
+          };
+        });
+        setProducts(formattedProducts);
+        setFilteredProducts(formattedProducts)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+
+
+    const fetchCategories = async () => {
         setLoading(true);
         setError(null);
         try {
-            const productsData: ProductResponse[] = await productService.getAllProducts();
-            console.log("Fetched Products:", productsData);
-            const formattedProducts: Product[] = productsData.map(product => ({
-                ...product,
-                imageUrl: product.imageUrl || 'default_image.jpg'  // Provide a default image URL
-            }));
-            setProducts(formattedProducts);
-            setFilteredProducts(formattedProducts);
+            const categoriesData: Category[] = await productService.getCategoryCounts();
+            setCategories(categoriesData);
         } catch (err) {
             setError(err instanceof Error ? err.message : "An unknown error occurred");
         } finally {
@@ -69,7 +122,7 @@ const ProductList = ({ searchText }: { searchText: string }) => {
     };
 
 
-    const filterProducts = useCallback(() => {
+   const filterProducts = useCallback(() => {
         let filtered = products;
 
         if (searchText) {
@@ -77,26 +130,21 @@ const ProductList = ({ searchText }: { searchText: string }) => {
                 product.productName?.toLowerCase().includes(searchText.toLowerCase())
             );
         }
-
-        if (activeTag) {
-            filtered = filtered.filter(product =>
-                product.categoryName?.toLowerCase().includes(activeTag.toLowerCase())
-            );
-        }
         setFilteredProducts(filtered);
-    }, [searchText, activeTag, products]);
 
-    // Filter products based on search text and active tag
+    }, [searchText, products]);
+
+
     useEffect(() => {
         filterProducts();
-    }, [searchText, activeTag, products, filterProducts]);
+    }, [searchText, products, filterProducts]);
 
-    // Fetch products on component mount
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
     }, []);
 
-    // Navigate to the product details screen
+
     const handlePress = (product: Product) => {
         router.push({
             pathname: "/productInfo",
@@ -105,42 +153,44 @@ const ProductList = ({ searchText }: { searchText: string }) => {
                 productName: product.productName,
                 price: String(product.price),
                 description: product.description,
-                imageUrl: product.imageUrl,
+                imageUrl: product.images[0]?.url,
                 categoryName: product.categoryName,
             },
         });
     };
-
-    // Toggle active tag for filtering
-    const handleTagFilter = (tag: string | null) => {
-        setActiveTag(prevTag => (prevTag === tag ? null : tag));
+    
+    const handleTagFilter = async (categoryId: number | null) => {
+      setActiveTag(categoryId);
+      await fetchProducts(categoryId);
     };
 
-    // Render a single product item
+
+
     const renderProductItem = ({ item }: { item: Product }) => {
-        console.log("Item Image URL:", item.imageUrl);
         return (
             <TouchableOpacity onPress={() => handlePress(item)} style={styles.productItemContainer}>
                 <View style={styles.productItem}>
-                        <Image
-                            source={{ uri: item.imageUrl }}
-                            style={styles.productImage}
-                        />
+                    <Image
+                        source={{ uri: item.images[0]?.url }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                        onError={(e) => console.error(`Error loading image: ${item.images[0]?.url}`, e.nativeEvent.error)}
+                    />
                     <Text style={styles.productName}>{item.productName}</Text>
                     <Text style={styles.productPrice}>{item.price.toLocaleString()} đ/Kg</Text>
                 </View>
             </TouchableOpacity>
-        )
+        );
     };
 
-    // Render tag filter buttons
-    const renderTagButton = (tag: string) => (
+
+    const renderTagButton = (category: Category) => (
         <TouchableOpacity
-            key={tag}
-            onPress={() => handleTagFilter(tag)}
-            style={[styles.tagButton, activeTag === tag && styles.activeTagButton]}
+            key={category.categoryId}
+            onPress={() => handleTagFilter(category.categoryId)}
+            style={[styles.tagButton, activeTag === category.categoryId && styles.activeTagButton]}
         >
-            <Text style={styles.tagText}>{tag}</Text>
+            <Text style={styles.tagText}>{category.categoryName}</Text>
         </TouchableOpacity>
     );
 
@@ -155,7 +205,7 @@ const ProductList = ({ searchText }: { searchText: string }) => {
     return (
         <View>
             <View style={styles.tagFilterContainer}>
-                {["Rau", "Trái cây", "Củ quả"].map(renderTagButton)}
+                {categories.map(category => renderTagButton(category))}
                 <TouchableOpacity style={styles.clearButton} onPress={() => handleTagFilter(null)}>
                     <Ionicons name="close-circle-outline" size={24} color="#000" />
                 </TouchableOpacity>
@@ -170,7 +220,6 @@ const ProductList = ({ searchText }: { searchText: string }) => {
         </View>
     );
 };
-
 
 const styles = StyleSheet.create({
     container: {
@@ -197,6 +246,7 @@ const styles = StyleSheet.create({
         aspectRatio: 1,
         borderRadius: 8,
         marginBottom: 8,
+        backgroundColor: "#f0f0f0",
     },
     productName: {
         fontSize: 16,
@@ -235,6 +285,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 });
-
 
 export default ProductList;

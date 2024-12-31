@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.210.165:9056/user-service/api';
+const BASE_URL = 'http://192.168.2.4:9056/user-service/api';
 
 // Helper function to handle fetch requests
 const handleFetch = async (url, options) => {

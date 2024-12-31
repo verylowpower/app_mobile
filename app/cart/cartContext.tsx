@@ -8,7 +8,7 @@ interface CartItem {
     image: string;
     price: number;
     quantity: number;
-    description?: string; // Added this line
+    description?: string;
 }
 
 interface CartContextProps {
@@ -93,26 +93,26 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }, [favorites]);
 
     const addToCart = (item: CartItem) => {
-      console.log("addToCart item:", item);
-      setCart((prevCart) => {
-          const existingItemIndex = prevCart.findIndex((cartItem) => cartItem.id === item.id);
-          if (existingItemIndex !== -1) {
-              const updatedCart = [...prevCart];
-              updatedCart[existingItemIndex].quantity += 1;
-              return updatedCart;
-          } else {
-              return [...prevCart, item];
-          }
-      });
+       console.log("addToCart item:", item);
+        setCart((previousCart) => {
+            return previousCart.map((cartItem) => {
+                    if (cartItem.id === item.id) {
+                        return { ...cartItem, quantity: cartItem.quantity + 1 };
+                    }
+                   return cartItem;
+                })
+            .concat(previousCart.every((cartItem) => cartItem.id !== item.id) ? [item] : [])
+        });
+
   };
 
     const removeFromCart = (itemId: string) => {
-        setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+        setCart((previousCart) => previousCart.filter((item) => item.id !== itemId));
     };
 
     const updateQuantity = (itemId: string, quantity: number) => {
-        setCart((prevCart) => {
-            return prevCart.map((item) => {
+        setCart((previousCart) => {
+            return previousCart.map((item) => {
                 if (item.id === itemId) {
                     return { ...item, quantity: quantity };
                 }
@@ -126,16 +126,24 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     };
 
     const addToFavorites = (item: CartItem) => {
-        setFavorites((prevFavorites) => {
-            if (!prevFavorites.includes(item.id)) return [...prevFavorites, item.id];
-            return prevFavorites;
+
+        setFavorites((previousFavorites) => {
+          if(!previousFavorites.includes(item.id)) {
+              return [...previousFavorites, item.id];
+          }
+            return previousFavorites;
         });
-        // ensure that item exist in cart
-        addToCart(item);
+
+       setCart((previousCart) => {
+            if(previousCart.every(cartItem => cartItem.id !== item.id)) {
+              return [...previousCart, item]
+           }
+            return previousCart;
+       })
     };
 
     const removeFromFavorites = (itemId: string) => {
-        setFavorites((prevFavorites) => prevFavorites.filter((id) => id !== itemId));
+        setFavorites((previousFavorites) => previousFavorites.filter((id) => id !== itemId));
     };
 
     const isFavorite = (itemId: string) => {
@@ -143,7 +151,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     };
 
     const calculateTotal = () => {
-        return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+       return cart.reduce((total, item) => total + item.price * item.quantity, 0);
     };
 
     return (

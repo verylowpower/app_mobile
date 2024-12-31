@@ -14,6 +14,11 @@ import { useCart } from "./cart/cartContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import productService from "./components/productService";
 
+interface ProductImage {
+  id?: number; // id might be missing
+  url: string;
+}
+
 interface Product {
     productId: number;
     productName: string;
@@ -23,7 +28,7 @@ interface Product {
     discount: number;
     description: string;
     productType: string;
-    imageUrl: string | null;
+    images: ProductImage[];
 }
 
 interface ProductResponse {
@@ -35,10 +40,8 @@ interface ProductResponse {
     discount: number;
     description: string;
     productType: string;
-    imageUrl: string | null;
+    imageUrl: string[]; // imageUrl is an array of strings
 }
-
-
 const DEFAULT_IMAGE_URL = "https://via.placeholder.com/200?text=No+Image";
 
 const ProductInfo = () => {
@@ -64,14 +67,28 @@ const ProductInfo = () => {
             setError(null);
             try {
                 const data: ProductResponse = await productService.getProductDetails(id);
+
                  const formattedProduct: Product = {
-                    ...data,
-                    imageUrl: data.imageUrl || null
+                    productId: data.productId,
+                    productName: data.productName,
+                    sku: data.sku,
+                    price: data.price,
+                    quantity: data.quantity,
+                    discount: data.discount,
+                    description: data.description,
+                    productType: data.productType,
+                   images: (data.imageUrl ?? []).map((url, index) => ({
+                      id: index, // You can use the index as a temporary id if you dont have a real id
+                        url: url
+                            ? url.replace('localhost', '192.168.2.4')
+                            : DEFAULT_IMAGE_URL,
+                    }))
                  };
                  setProduct(formattedProduct);
 
             } catch (err: any) {
-                setError(err.message || "Failed to fetch product details");
+                 console.error(err);
+                 setError(err.message || "Failed to fetch product details");
             } finally {
                 setLoading(false);
             }
@@ -92,7 +109,7 @@ const ProductInfo = () => {
             addToCart({
                 id: String(product.productId),
                 name: product.productName,
-                image: product.imageUrl || DEFAULT_IMAGE_URL,
+                image: product.images[0]?.url || DEFAULT_IMAGE_URL,
                 price: product.price,
                 quantity: 1,
                 description: product.description,
@@ -111,7 +128,7 @@ const ProductInfo = () => {
                 addToFavorites({
                     id: productId,
                     name: product.productName,
-                    image: product.imageUrl || DEFAULT_IMAGE_URL,
+                   image: product.images[0]?.url || DEFAULT_IMAGE_URL,
                     price: product.price,
                     quantity: 1,
                     description: product.description,
@@ -132,7 +149,6 @@ const ProductInfo = () => {
         return <View style={styles.centered}><Text>No product data</Text></View>;
     }
 
-    //console.log("Product Image URL:", product.imageUrl)
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <TouchableOpacity onPress={handleGoBack} style={styles.goBack}>
@@ -140,13 +156,13 @@ const ProductInfo = () => {
                 <Text style={styles.goBackText}>Back</Text>
             </TouchableOpacity>
             <View style={styles.productContainer}>
-                {product.imageUrl ? (
+                {product.images && product.images.length > 0 ? (
                      <Image
                        source={{
-                           uri: product.imageUrl
+                           uri: product.images[0]?.url || DEFAULT_IMAGE_URL
                        }}
                        style={styles.productImage}
-
+                        onError={() => setImageError(true)}
                    />
                 ) : (
                    <View style={[styles.productImage, { backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center'}]}>

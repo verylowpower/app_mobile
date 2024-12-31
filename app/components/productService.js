@@ -1,100 +1,136 @@
-const API_BASE_URL = 'http://192.168.210.165:9056/product-service/api';
+const API_BASE_URL = 'http://192.168.2.4:9056/product-service/api';
 
 const productService = {
-    // Helper function for fetch requests
     _fetch: async (url, options = {}) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // Timeout after 10 seconds
+
         try {
-            const response = await fetch(url, options);
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {}),
+                },
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                const message = `HTTP error! Status: ${response.status}`;
+                let errorBody;
                 try {
-                    const errorBody = await response.json();
-                    throw new Error(`${message} - Details: ${JSON.stringify(errorBody)}`);
+                    errorBody = await response.json();
                 } catch (jsonError) {
-                    throw new Error(message);
+                    errorBody = { message: `HTTP error! Status: ${response.status}` };
                 }
+                throw new Error(JSON.stringify(errorBody));
             }
             return await response.json();
         } catch (error) {
+            clearTimeout(timeoutId);
             console.error(`Error fetching ${url}:`, error);
             throw error;
         }
     },
 
-    // 1.1. API liệt kê tên thể loại và đếm số sản phẩm của từng thể loại
-    getCategoriesWithProductCount: async () => {
-        return await productService._fetch(`${API_BASE_URL}/categories/count`);
-    },
-
-    // 1.2. API Lấy list sản phẩm theo xếp loại mới, đặc sắc, bán chạy
-    getNewProducts: async () => {
-        return await productService._fetch(`${API_BASE_URL}/products/listNew`);
-    },
-    getFeaturedProducts: async () => {
-        return await productService._fetch(`${API_BASE_URL}/products/listFeatured`);
-    },
-    getBestsellerProducts: async () => {
-        return await productService._fetch(`${API_BASE_URL}/products/listBestseller`);
-    },
-
-    // 1.3. API Lấy chi tiết sản phẩm dựa vào id (list hình ảnh)
-    getProductDetails: async (productId) => {
+    getAllProducts: async () => {
         try {
-            const product = await productService._fetch(`${API_BASE_URL}/products/${productId}`);
-             return product;
-        } catch (error) {
-            console.error(`Error fetching product details for ID ${productId}:`, error);
-            throw error;
-        }
-    },
-
-    // 1.4. API kiểm tra tình trạng sản phẩm còn hàng không
-    getProductQuantity: async (productId) => {
-        return await productService._fetch(`${API_BASE_URL}/products/${productId}/quantity`);
-    },
-
-   // 1.5. API lấy danh sách sản phầm all
-     getAllProducts: async () => {
-        try {
-           const products = await productService._fetch(`${API_BASE_URL}/products/listProduct`);
-            return products;
+            return await productService._fetch(`${API_BASE_URL}/products/listProduct`);
         } catch (error) {
             console.error("Error fetching all products:", error);
             throw error;
         }
     },
-
-
-    // 1.6. API lấy list sản phẩm theo id category
-    getProductsByCategoryId: async (categoryId) => {
-        return await productService._fetch(`${API_BASE_URL}/products/by-categoryId?categoryId=${categoryId}`);
-    },
-
-    // 1.7. API lấy list sản phẩm theo categoryName
-    getProductsByCategoryName: async (categoryName) => {
-        return await productService._fetch(`${API_BASE_URL}/products/by-categoryName?categoryName=${categoryName}`);
-    },
-
-  // 1.8. API lấy list sản phẩm ALL (có phân trang)
-     getAllProductsPage: async (page = 0, size = 12) => {
+    
+    getCategoryCounts: async () => {
         try {
-           const products = await productService._fetch(`${API_BASE_URL}/products/listProductPage?page=${page}&size=${size}`);
-            return products;
+            return await productService._fetch(`${API_BASE_URL}/categories/count`);
         } catch (error) {
-            console.error("Error fetching paginated products:", error);
+            console.error("Error fetching category counts:", error);
             throw error;
         }
     },
-    // 1.9. API lấy list sản phẩm theo id category (có phân trang)
-    getProductsByCategoryIdPage: async (categoryId, page = 0, size = 12) => {
+
+    getNewProducts: async () => {
+        try {
+             return await productService._fetch(`${API_BASE_URL}/products/listNew`);
+        } catch (error) {
+            console.error("Error fetching new products:", error);
+            throw error;
+        }
+    },
+
+    getFeaturedProducts: async () => {
+        try {
+           return await productService._fetch(`${API_BASE_URL}/products/listFeatured`);
+        } catch (error) {
+            console.error("Error fetching featured products:", error);
+             throw error;
+        }
+    },
+
+    getBestsellerProducts: async () => {
          try {
-           const products = await productService._fetch(`${API_BASE_URL}/products/by-category-page?categoryId=${categoryId}&page=${page}&size=${size}`);
-            return products;
+           return await productService._fetch(`${API_BASE_URL}/products/listBestseller`);
         } catch (error) {
-            console.error("Error fetching paginated products by category:", error);
+           console.error("Error fetching bestseller products:", error);
             throw error;
         }
     },
+
+    getProductDetails: async (id) => {
+        try {
+            return await productService._fetch(`${API_BASE_URL}/products/${id}`);
+        } catch (error) {
+            console.error(`Error fetching product details for ID ${id}:`, error);
+            throw error;
+        }
+    },
+    
+    getProductQuantity: async (id) => {
+        try {
+            return await productService._fetch(`${API_BASE_URL}/products/${id}/quantity`);
+        } catch (error) {
+             console.error(`Error fetching product quantity for ID ${id}:`, error);
+             throw error;
+        }
+    },
+     
+    getProductsByCategoryId: async (categoryId) => {
+        try {
+            return await productService._fetch(`${API_BASE_URL}/products/by-categoryId?categoryId=${categoryId}`);
+        } catch (error) {
+            console.error(`Error fetching products by category ID ${categoryId}:`, error);
+            throw error;
+        }
+    },
+
+     getProductsByCategoryName: async (categoryName) => {
+        try {
+            return await productService._fetch(`${API_BASE_URL}/products/by-categoryName?categoryName=${categoryName}`);
+        } catch (error) {
+            console.error(`Error fetching products by category name ${categoryName}`, error);
+             throw error;
+        }
+    },
+    
+    getPaginatedProducts: async (page, size) => {
+         try {
+            return await productService._fetch(`${API_BASE_URL}/products/listProductPage?page=${page}&size=${size}`);
+         } catch (error) {
+             console.error(`Error fetching paginated products (page: ${page}, size: ${size}):`, error);
+             throw error;
+         }
+    },
+
+    getPaginatedProductsByCategoryId: async (categoryId, page, size) => {
+        try {
+            return await productService._fetch(`${API_BASE_URL}/products/by-category-page?categoryId=${categoryId}&page=${page}&size=${size}`);
+        } catch (error) {
+           console.error(`Error fetching paginated products by category ID ${categoryId} (page: ${page}, size: ${size}):`, error);
+           throw error;
+        }
+    }
 };
 
 export default productService;
