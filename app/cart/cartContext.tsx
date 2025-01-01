@@ -1,6 +1,9 @@
 // cartContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import orderService from '../components/orderService';
+import { useProfile } from '../context/ProfileContext';
+
 
 interface CartItem {
     id: string;
@@ -23,6 +26,9 @@ interface CartContextProps {
     isFavorite: (itemId: string) => boolean;
     favoritesLoading: boolean;
     cartLoading: boolean;
+     fetchCart: () => Promise<void>;
+     realTimeUpdate: boolean
+    setRealTimeUpdate: (realTimeUpdate: boolean) => void
     calculateTotal: () => number;
 }
 
@@ -33,23 +39,64 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     const [favorites, setFavorites] = useState<string[]>([]);
     const [favoritesLoading, setFavoritesLoading] = useState(true);
     const [cartLoading, setCartLoading] = useState(true);
+      const [realTimeUpdate, setRealTimeUpdate] = useState(true);
+    const {profile} = useProfile()
 
     // Load cart data from storage
+      const fetchCart = async () => {
+          if(profile.userId) {
+               try {
+                   setCartLoading(true);
+                   const cartData = await orderService.getCartItems(profile.userId.toString());
+                    if (cartData && cartData.cartItems) {
+                       // Map cartItems data to CartItem
+                        const formattedCart = cartData.cartItems.map((item: any) => ({
+                           id: item.productId.toString(),
+                           name: item.productName,
+                            image: item.imageUrl
+                              ? item.imageUrl.replace('localhost', '192.168.2.4')
+                               : null,
+                           price: item.price,
+                           quantity: item.quantity,
+                           description: item.description
+                       }));
+                       setCart(formattedCart);
+                   }
+               } catch (error) {
+                   console.error('Failed to load cart data:', error);
+               } finally {
+                   setCartLoading(false);
+               }
+          } else {
+              console.log("user not logged in")
+              setCart([]);
+              setCartLoading(false);
+          }
+
+    }
+
     useEffect(() => {
-        const loadCart = async () => {
-            try {
-                const cartData = await AsyncStorage.getItem('cart');
-                if (cartData) {
-                    setCart(JSON.parse(cartData));
-                }
-            } catch (error) {
-                console.error('Failed to load cart data:', error);
-            } finally {
-                setCartLoading(false);
-            }
-        };
-        loadCart();
-    }, []);
+      fetchCart();
+    }, [profile.userId]);
+   useEffect(() => {
+        let intervalId: any;
+
+        if (realTimeUpdate && profile.userId) {
+            intervalId = setInterval(() => {
+                console.log("Realtime update")
+                fetchCart();
+            }, 5000);
+        }
+
+
+        return () => {
+          if(intervalId) {
+             clearInterval(intervalId);
+           }
+
+        }
+    }, [realTimeUpdate, profile.userId]);
+
 
     // Load favorites data from storage
     useEffect(() => {
@@ -68,17 +115,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         loadFavorites();
     }, []);
 
-    // Save cart data to storage
-    useEffect(() => {
-        const saveCart = async () => {
-            try {
-                await AsyncStorage.setItem('cart', JSON.stringify(cart));
-            } catch (error) {
-                console.error('Failed to save cart data:', error);
-            }
-        };
-        saveCart();
-    }, [cart]);
 
     // Save favorite data to storage
     useEffect(() => {
@@ -92,22 +128,36 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         saveFavorites();
     }, [favorites]);
 
-    const addToCart = (item: CartItem) => {
-       console.log("addToCart item:", item);
-        setCart((previousCart) => {
-            return previousCart.map((cartItem) => {
-                    if (cartItem.id === item.id) {
-                        return { ...cartItem, quantity: cartItem.quantity + 1 };
-                    }
-                   return cartItem;
-                })
-            .concat(previousCart.every((cartItem) => cartItem.id !== item.id) ? [item] : [])
-        });
+  const addToCart = async (item: CartItem) => {
+        if (profile.userId) {
+            try {
+              const newItem = { productId: parseInt(item.id), quantity: 1, price: item.price }; // Include price here
+              await orderService.addItemToCart(profile.userId.toString(), newItem);
+              // Log success message with product info
+              console.log('Successfully added to cart:', {
+                productId: item.id,
+                productName: item.name,
+                price: item.price,
+                quantity: 1,
+              });
+              await fetchCart();
+            } catch (error) {
+              console.error("Error adding item to cart:", error);
+            }
+          }
+        };
 
-  };
+   const removeFromCart = async (itemId: string) => {
+        if(profile.userId) {
+            try{
+                await orderService.removeItemFromCart(profile.userId.toString(), itemId);
+                await fetchCart();
 
-    const removeFromCart = (itemId: string) => {
-        setCart((previousCart) => previousCart.filter((item) => item.id !== itemId));
+            } catch (error) {
+                console.error("Error removing item from cart:", error)
+            }
+        }
+
     };
 
     const updateQuantity = (itemId: string, quantity: number) => {
@@ -125,22 +175,14 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         setCart([]);
     };
 
-    const addToFavorites = (item: CartItem) => {
-
-        setFavorites((previousFavorites) => {
-          if(!previousFavorites.includes(item.id)) {
-              return [...previousFavorites, item.id];
-          }
-            return previousFavorites;
-        });
-
-       setCart((previousCart) => {
-            if(previousCart.every(cartItem => cartItem.id !== item.id)) {
-              return [...previousCart, item]
-           }
-            return previousCart;
-       })
-    };
+  const addToFavorites = (item: CartItem) => {
+    setFavorites((previousFavorites) => {
+      if (!previousFavorites.includes(item.id)) {
+        return [...previousFavorites, item.id];
+      }
+      return previousFavorites;
+    });
+  };
 
     const removeFromFavorites = (itemId: string) => {
         setFavorites((previousFavorites) => previousFavorites.filter((id) => id !== itemId));
@@ -169,6 +211,9 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                 favoritesLoading,
                 cartLoading,
                 calculateTotal,
+                fetchCart,
+                 realTimeUpdate,
+                 setRealTimeUpdate
             }}
         >
             {children}

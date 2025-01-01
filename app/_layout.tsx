@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import { CartProvider } from "./cart/cartContext"; // Import CartProvider
+import { ProfileProvider } from './context/ProfileContext';
 
 export default function RootLayout() {
     const [fontsLoaded] = useFonts({
@@ -14,10 +15,12 @@ export default function RootLayout() {
     }
 
     return (
+        <ProfileProvider>
         <CartProvider>
             <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-        </CartProvider>
+                </Stack>
+             </CartProvider>
+        </ProfileProvider>
     );
 }

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// d:\dev\app_mobile\app\(tabs)\cart.tsx
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -15,11 +16,15 @@ import { useRouter } from "expo-router";
 import Checkout from "../cart/checkout"; // Import the Checkout component
 
 const Cart = () => {
-  const { cart, updateQuantity, calculateTotal } = useCart();
+  const { cart, updateQuantity, calculateTotal, fetchCart } = useCart();
   const router = useRouter();
   const [showCheckout, setShowCheckout] = useState(false); // Add state for checkout visibility
 
-  const handleGoToCheckout = () => {
+    useEffect(() => {
+        fetchCart();
+    }, []);
+
+    const handleGoToCheckout = () => {
     setShowCheckout(true);
   };
 
@@ -62,7 +67,7 @@ const Cart = () => {
             keyboardType="numeric"
             value={item.quantity.toString()}
             onChangeText={(text) =>
-              updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
+                updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
             }
           />
           <Text style={styles.itemTotalPrice}>
