@@ -29,13 +29,6 @@ export default function UserSetting() {
       >
         <Text style={styles.buttonText}>Thay Đổi Thông Tin</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.button, styles.dangerButton]}
-        onPress={() => router.push('/setting/deleteAccount')}
-      >
-        <Text style={styles.buttonText}>Xóa Tài Khoản</Text>
-      </TouchableOpacity>
     </View>
   );
 }

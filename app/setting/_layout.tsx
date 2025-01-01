@@ -12,7 +12,6 @@ export default function Layout() {
       <Stack.Screen name="purchaseHistory" />
       <Stack.Screen name="changePassword" />
       <Stack.Screen name="editPersonalInfo" />
-      <Stack.Screen name="deleteAccount" />
     </Stack>
   );
 }
