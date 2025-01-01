@@ -1,5 +1,4 @@
-// ProfileContext.tsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { getProfile } from '../components/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,6 +18,7 @@ interface ProfileContextProps {
     profile: Profile;
     fetchProfile: () => Promise<void>;
     setProfile: (profile: Partial<Profile>) => void;
+    logout: () => Promise<void>; // Thêm hàm logout
 }
 
 const ProfileContext = createContext<ProfileContextProps | undefined>(undefined);
@@ -40,7 +40,7 @@ const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
         setProfile((prevProfile) => ({ ...prevProfile, ...updatedProfile }));
     };
 
-    const fetchProfile = async (retryCount = 0) => {
+    const fetchProfile = useCallback(async (retryCount = 0) => {
         const token = await AsyncStorage.getItem('token');
 
         if (!token) {
@@ -54,27 +54,25 @@ const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
             const response = await getProfile();
             console.log("ProfileContext: after getProfile call, response:", response);
             if (response && response.userId != null) {
-               setProfile({
-                  userId: response.userId,
-                  fullName: response.fullName,
-                  email: response.email,
-                  phone: response.phone,
-                  adress: response.adress,
-                  birthday: response.birthday,
-                  sex: response.sex,
-                  imageUrl: response.imageUrl,
-                  loading: false,
-               });
-            } else{
-                 console.log("ProfileContext: userId not found in response, setting loading to false");
-                  setProfile(prev => ({...prev, loading: false}));
+                setProfile({
+                    userId: response.userId,
+                    fullName: response.fullName,
+                    email: response.email,
+                    phone: response.phone,
+                    adress: response.adress,
+                    birthday: response.birthday,
+                    sex: response.sex,
+                    imageUrl: response.imageUrl,
+                    loading: false,
+                });
+            } else {
+                console.log("ProfileContext: userId not found in response, setting loading to false");
+                setProfile(prev => ({ ...prev, loading: false }));
             }
-
-
         } catch (error) {
             console.error('Error fetching profile in ProfileContext:', error);
             if (retryCount < 3) {
-                console.log("retrying", retryCount)
+                console.log("retrying", retryCount);
                 setTimeout(() => {
                     fetchProfile(retryCount + 1);
                 }, 1000);
@@ -82,15 +80,29 @@ const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 setProfile(prev => ({ ...prev, loading: false }));
             }
         }
-    };
+    }, []);
+
+    const logout = useCallback(async () => {
+        await AsyncStorage.removeItem('token'); // Xóa token
+        setProfile({
+            userId: null,
+            fullName: '',
+            email: '',
+            phone: '',
+            adress: '',
+            birthday: '',
+            sex: '',
+            imageUrl: '',
+            loading: false,
+        }); // Làm mới profile
+    }, []);
 
     useEffect(() => {
-         fetchProfile();
-    }, [])
-
+        fetchProfile();
+    }, [fetchProfile]);
 
     return (
-        <ProfileContext.Provider value={{ profile, fetchProfile, setProfile: setProfilePartial }}>
+        <ProfileContext.Provider value={{ profile, fetchProfile, setProfile: setProfilePartial, logout }}>
             {children}
         </ProfileContext.Provider>
     );

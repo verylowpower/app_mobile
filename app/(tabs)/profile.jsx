@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getProfile } from '../components/authService'; // Import from authService
+import { useProfile } from '../context/ProfileContext'; // Import useProfile
 
 export default function Profile() {
     const router = useRouter();
-    const [profileData, setProfileData] = useState(null);
+    const { profile, fetchProfile } = useProfile(); // Use profile context
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const loadProfile = async () => {
             try {
-                const response = await getProfile();
-                setProfileData(response);
+                await fetchProfile();
             } catch (error) {
                 console.error('Error fetching profile:', error);
                 Alert.alert('Lỗi', 'Không thể tải thông tin người dùng.');
@@ -21,8 +20,8 @@ export default function Profile() {
             }
         };
 
-        fetchProfile();
-    }, []);
+        loadProfile();
+    }, [fetchProfile]);
 
     const handleLogout = () => {
         Alert.alert(
@@ -43,7 +42,7 @@ export default function Profile() {
         );
     }
 
-    if (!profileData) {
+    if (!profile) {
         return (
             <View style={styles.container}>
                 <Text style={styles.title}>Không có thông tin người dùng</Text>
@@ -52,62 +51,61 @@ export default function Profile() {
     }
 
     const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-       try {
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-      } catch(error) {
-         console.log(error)
-          return "Invalid Date"
-      }
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        } catch (error) {
+            console.log(error);
+            return "Invalid Date";
+        }
     };
 
     return (
-      <ScrollView style={styles.container}>
-         <Text style={styles.title}>Thông Tin Người Dùng</Text>
+        <ScrollView style={styles.container}>
+            <Text style={styles.title}>Thông Tin Người Dùng</Text>
 
-        <View style={styles.avatarContainer}>
-           <Image
-              source={{
-                    uri: profileData.imageUrl ? profileData.imageUrl : 'https://via.placeholder.com/100'
-                 }}
-              style={styles.avatar}
-            />
-            <Text style={styles.username}>{profileData.fullName}</Text>
-        </View>
+            <View style={styles.avatarContainer}>
+                <Image
+                    source={{
+                        uri: profile.imageUrl ? profile.imageUrl : 'https://via.placeholder.com/100'
+                    }}
+                    style={styles.avatar}
+                />
+                <Text style={styles.username}>{profile.fullName}</Text>
+            </View>
 
-        <View style={styles.infoContainer}>
-           <Text style={styles.infoLabel}>Email:</Text>
-           <Text style={styles.infoValue}>{profileData.email}</Text>
+            <View style={styles.infoContainer}>
+                <Text style={styles.infoLabel}>Email:</Text>
+                <Text style={styles.infoValue}>{profile.email}</Text>
 
-           <Text style={styles.infoLabel}>Số điện thoại:</Text>
-            <Text style={styles.infoValue}>{profileData.phone}</Text>
+                <Text style={styles.infoLabel}>Số điện thoại:</Text>
+                <Text style={styles.infoValue}>{profile.phone}</Text>
 
-            <Text style={styles.infoLabel}>Địa chỉ:</Text>
-             <Text style={styles.infoValue}>{profileData.adress}</Text>
+                <Text style={styles.infoLabel}>Địa chỉ:</Text>
+                <Text style={styles.infoValue}>{profile.adress}</Text>
 
-           <Text style={styles.infoLabel}>Ngày sinh:</Text>
-           <Text style={styles.infoValue}>{formatDate(profileData.birthday)}</Text>
+                <Text style={styles.infoLabel}>Ngày sinh:</Text>
+                <Text style={styles.infoValue}>{formatDate(profile.birthday)}</Text>
 
-           <Text style={styles.infoLabel}>Giới tính:</Text>
-           <Text style={styles.infoValue}>{profileData.sex || 'N/A'}</Text>
+                <Text style={styles.infoLabel}>Giới tính:</Text>
+                <Text style={styles.infoValue}>{profile.sex || 'N/A'}</Text>
+            </View>
 
-        </View>
+            <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => router.push('/setting/userSetting')}
+            >
+                <Text style={styles.settingsText}>Cài Đặt</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-           style={styles.settingsButton}
-            onPress={() => router.push('/setting/userSetting')}
-        >
-           <Text style={styles.settingsText}>Cài Đặt</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Đăng Xuất</Text>
-        </TouchableOpacity>
-      </ScrollView>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutText}>Đăng Xuất</Text>
+            </TouchableOpacity>
+        </ScrollView>
     );
 }
 

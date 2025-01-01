@@ -1,5 +1,3 @@
-// d:\dev\app_mobile\app\components\orderService.js
-// orderService.js
 const API_BASE_URL = 'http://192.168.2.4:9056/order-service/api'; // Thay đổi URL cho order-service
 
 const orderService = {
@@ -92,6 +90,25 @@ const orderService = {
         } catch (error) {
             console.error("Error removing item from cart:", error);
              throw error;
+        }
+    },
+
+    /**
+     * Cập nhật số lượng sản phẩm trong giỏ hàng.
+     * @param {string} userId - ID của người dùng.
+     * @param {string} productId - ID của sản phẩm cần cập nhật.
+     * @param {number} quantity - Số lượng mới.
+     * @returns {Promise} - Promise chứa kết quả của API.
+     */
+    updateCartItemQuantity: async (userId, productId, quantity) => {
+        try {
+            return await orderService._fetch(`${API_BASE_URL}/cart/update-quantity`, {
+                method: 'PUT',
+                body: JSON.stringify({ userId, productId, quantity }),
+            });
+        } catch (error) {
+            console.error("Error updating cart item quantity:", error);
+            throw error;
         }
     },
 };

@@ -15,8 +15,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import productService from "./components/productService";
 
 interface ProductImage {
-  id?: number; // id might be missing
-  url: string;
+    id?: number;
+    url: string;
 }
 
 interface Product {
@@ -24,6 +24,7 @@ interface Product {
     productName: string;
     sku: string | null;
     price: number;
+    oldPrice: number | null;
     quantity: number;
     discount: number;
     description: string;
@@ -40,8 +41,9 @@ interface ProductResponse {
     discount: number;
     description: string;
     productType: string;
-    imageUrl: string[]; // imageUrl is an array of strings
+    imageUrl: string[];
 }
+
 const DEFAULT_IMAGE_URL = "https://via.placeholder.com/200?text=No+Image";
 
 const ProductInfo = () => {
@@ -68,27 +70,29 @@ const ProductInfo = () => {
             try {
                 const data: ProductResponse = await productService.getProductDetails(id);
 
-                 const formattedProduct: Product = {
+                // Tính toán giá cũ và giá mới sau khi giảm giá
+                const oldPrice = data.price;
+                const discountedPrice = data.discount > 0 ? data.price * (1 - data.discount / 100) : data.price;
+
+                const formattedProduct: Product = {
                     productId: data.productId,
                     productName: data.productName,
                     sku: data.sku,
-                    price: data.price,
+                    price: discountedPrice,
+                    oldPrice: oldPrice,
                     quantity: data.quantity,
                     discount: data.discount,
                     description: data.description,
                     productType: data.productType,
-                   images: (data.imageUrl ?? []).map((url, index) => ({
-                      id: index, // You can use the index as a temporary id if you dont have a real id
-                        url: url
-                            ? url.replace('localhost', '192.168.2.4')
-                            : DEFAULT_IMAGE_URL,
-                    }))
-                 };
-                 setProduct(formattedProduct);
-
+                    images: (data.imageUrl ?? []).map((url, index) => ({
+                        id: index,
+                        url: url ? url.replace('localhost', '192.168.2.4') : DEFAULT_IMAGE_URL,
+                    })),
+                };
+                setProduct(formattedProduct);
             } catch (err: any) {
-                 console.error(err);
-                 setError(err.message || "Failed to fetch product details");
+                console.error(err);
+                setError(err.message || "Failed to fetch product details");
             } finally {
                 setLoading(false);
             }
@@ -128,7 +132,7 @@ const ProductInfo = () => {
                 addToFavorites({
                     id: productId,
                     name: product.productName,
-                   image: product.images[0]?.url || DEFAULT_IMAGE_URL,
+                    image: product.images[0]?.url || DEFAULT_IMAGE_URL,
                     price: product.price,
                     quantity: 1,
                     description: product.description,
@@ -145,6 +149,7 @@ const ProductInfo = () => {
     if (error) {
         return <View style={styles.centered}><Text>Error: {error}</Text></View>;
     }
+
     if (!product) {
         return <View style={styles.centered}><Text>No product data</Text></View>;
     }
@@ -157,20 +162,23 @@ const ProductInfo = () => {
             </TouchableOpacity>
             <View style={styles.productContainer}>
                 {product.images && product.images.length > 0 ? (
-                     <Image
-                       source={{
-                           uri: product.images[0]?.url || DEFAULT_IMAGE_URL
-                       }}
-                       style={styles.productImage}
+                    <Image
+                        source={{ uri: product.images[0]?.url || DEFAULT_IMAGE_URL }}
+                        style={styles.productImage}
                         onError={() => setImageError(true)}
-                   />
+                    />
                 ) : (
-                   <View style={[styles.productImage, { backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center'}]}>
-                       <Text>No Image</Text>
-                   </View>
-               )}
+                    <View style={[styles.productImage, { backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text>No Image</Text>
+                    </View>
+                )}
                 <Text style={styles.productName}>{product.productName}</Text>
-                <Text style={styles.productPrice}>{product.price} đ</Text>
+                <View style={styles.priceContainer}>
+                    {product.discount > 0 && (
+                        <Text style={styles.oldPrice}>{product.oldPrice?.toLocaleString()} đ</Text>
+                    )}
+                    <Text style={styles.productPrice}>{product.price.toLocaleString()} đ</Text>
+                </View>
                 <Text style={styles.productDescription}>{product.description}</Text>
             </View>
             <TouchableOpacity onPress={handleAddToCart} style={styles.addToCartButton}>
@@ -198,7 +206,19 @@ const styles = StyleSheet.create({
     productContainer: { alignItems: "center", marginBottom: 32 },
     productImage: { width: 200, height: 200, borderRadius: 8, marginBottom: 16 },
     productName: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
-    productPrice: { fontSize: 16, color: "#28a745", marginBottom: 4 },
+    priceContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 4,
+    },
+    oldPrice: {
+        fontSize: 16,
+        color: "gray",
+        textDecorationLine: 'line-through',
+        marginRight: 4,
+    },
+    productPrice: { fontSize: 16, color: "#28a745" },
     productDescription: { fontSize: 14, color: "#6c757d", textAlign: "center" },
     addToCartButton: { backgroundColor: "#28a745", paddingVertical: 12, borderRadius: 8, alignItems: "center", marginBottom: 16 },
     addToCartText: { color: "#fff", fontSize: 16 },

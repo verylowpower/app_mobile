@@ -21,6 +21,7 @@ interface Product {
     productName: string;
     sku: string | null;
     price: number;
+    oldPrice: number | null;
     quantity: number;
     discount: number;
     description: string;
@@ -59,54 +60,55 @@ const ProductList = ({ searchText }: { searchText: string }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-
     const fetchProducts = async (categoryId: number | null = null) => {
-      setLoading(true);
-      setError(null);
-      try {
-        let productsData: ProductResponse[];
-        if (categoryId) {
-          productsData = await productService.getProductsByCategoryId(categoryId);
-        } else {
-          productsData = await productService.getAllProducts();
+        setLoading(true);
+        setError(null);
+        try {
+            let productsData: ProductResponse[];
+            if (categoryId) {
+                productsData = await productService.getProductsByCategoryId(categoryId);
+            } else {
+                productsData = await productService.getAllProducts();
+            }
+            const formattedProducts: Product[] = productsData.map(product => {
+                let images: ProductImage[] = [];
+                if (Array.isArray(product.imageUrl)) {
+                    images = product.imageUrl.map((url, index) => ({
+                        id: index,
+                        url: url ? url.replace('localhost', '192.168.2.4') : '',
+                    }));
+                } else if (typeof product.imageUrl === 'string') {
+                    images = [{ id: 0, url: product.imageUrl.replace('localhost', '192.168.2.4') }];
+                }
+
+                // Tính toán giá cũ và giá mới sau khi giảm giá
+                const oldPrice = product.price;
+                const discountedPrice = product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price;
+
+                return {
+                    ...product,
+                    images: images,
+                    productId: product.productId,
+                    productName: product.productName,
+                    sku: product.sku,
+                    price: discountedPrice,
+                    oldPrice: oldPrice,
+                    quantity: product.quantity,
+                    discount: product.discount,
+                    description: product.description,
+                    productType: product.productType,
+                    categoryName: product.categoryName,
+                    categoryId: product.categoryId,
+                };
+            });
+            setProducts(formattedProducts);
+            setFilteredProducts(formattedProducts);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "An unknown error occurred");
+        } finally {
+            setLoading(false);
         }
-        const formattedProducts: Product[] = productsData.map(product => {
-          let images: ProductImage[] = [];
-          if (Array.isArray(product.imageUrl)) {
-            images = product.imageUrl.map((url, index) => ({
-              id: index,
-              url: url
-                ? url.replace('localhost', '192.168.2.4')
-                : '',
-            }));
-          } else if (typeof product.imageUrl === 'string') {
-            images = [{ id: 0, url: product.imageUrl.replace('localhost', '192.168.2.4') }]
-          }
-          return {
-            ...product,
-            images: images,
-            productId: product.productId,
-            productName: product.productName,
-            sku: product.sku,
-            price: product.price,
-            quantity: product.quantity,
-            discount: product.discount,
-            description: product.description,
-            productType: product.productType,
-            categoryName: product.categoryName,
-            categoryId: product.categoryId
-          };
-        });
-        setProducts(formattedProducts);
-        setFilteredProducts(formattedProducts)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
     };
-
-
 
     const fetchCategories = async () => {
         setLoading(true);
@@ -121,8 +123,7 @@ const ProductList = ({ searchText }: { searchText: string }) => {
         }
     };
 
-
-   const filterProducts = useCallback(() => {
+    const filterProducts = useCallback(() => {
         let filtered = products;
 
         if (searchText) {
@@ -131,9 +132,7 @@ const ProductList = ({ searchText }: { searchText: string }) => {
             );
         }
         setFilteredProducts(filtered);
-
     }, [searchText, products]);
-
 
     useEffect(() => {
         filterProducts();
@@ -144,27 +143,25 @@ const ProductList = ({ searchText }: { searchText: string }) => {
         fetchCategories();
     }, []);
 
-
     const handlePress = (product: Product) => {
         router.push({
             pathname: "/productInfo",
             params: {
-                productId: product.productId,
+                productId: String(product.productId),
                 productName: product.productName,
                 price: String(product.price),
+                oldPrice: String(product.oldPrice),
                 description: product.description,
                 imageUrl: product.images[0]?.url,
                 categoryName: product.categoryName,
             },
         });
     };
-    
+
     const handleTagFilter = async (categoryId: number | null) => {
-      setActiveTag(categoryId);
-      await fetchProducts(categoryId);
+        setActiveTag(categoryId);
+        await fetchProducts(categoryId);
     };
-
-
 
     const renderProductItem = ({ item }: { item: Product }) => {
         return (
@@ -177,12 +174,16 @@ const ProductList = ({ searchText }: { searchText: string }) => {
                         onError={(e) => console.error(`Error loading image: ${item.images[0]?.url}`, e.nativeEvent.error)}
                     />
                     <Text style={styles.productName}>{item.productName}</Text>
-                    <Text style={styles.productPrice}>{item.price.toLocaleString()} đ/Kg</Text>
+                    <View style={styles.priceContainer}>
+                        {item.discount > 0 && (
+                            <Text style={styles.oldPrice}>{item.oldPrice?.toLocaleString()} đ/Kg</Text>
+                        )}
+                        <Text style={styles.productPrice}>{item.price.toLocaleString()} đ/Kg</Text>
+                    </View>
                 </View>
             </TouchableOpacity>
         );
     };
-
 
     const renderTagButton = (category: Category) => (
         <TouchableOpacity
@@ -251,11 +252,21 @@ const styles = StyleSheet.create({
     productName: {
         fontSize: 16,
         textAlign: "center",
+        marginBottom: 8, // Add margin bottom
+    },
+    priceContainer: {
+        flexDirection: "column", // Stack prices vertically
+        alignItems: "flex-end", // Align prices to the right
+        justifyContent: "center",
+    },
+    oldPrice: {
+        fontSize: 14,
+        color: "gray",
+        textDecorationLine: 'line-through',
     },
     productPrice: {
         fontSize: 14,
-        color: "gray",
-        textAlign: "center",
+        color: "black",
     },
     tagFilterContainer: {
         flexDirection: 'row',

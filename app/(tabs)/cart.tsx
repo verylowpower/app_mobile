@@ -1,4 +1,3 @@
-// d:\dev\app_mobile\app\(tabs)\cart.tsx
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -13,18 +12,22 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCart, CartItem } from "../cart/cartContext";
 import { ListRenderItem } from "react-native";
 import { useRouter } from "expo-router";
-import Checkout from "../cart/checkout"; // Import the Checkout component
+import Checkout from "../cart/checkout";
+import { useProfile } from "../context/ProfileContext"; // Import useProfile
 
 const Cart = () => {
   const { cart, updateQuantity, calculateTotal, fetchCart } = useCart();
+  const { profile } = useProfile(); // Use profile context
   const router = useRouter();
-  const [showCheckout, setShowCheckout] = useState(false); // Add state for checkout visibility
+  const [showCheckout, setShowCheckout] = useState(false);
 
-    useEffect(() => {
-        fetchCart();
-    }, []);
+  useEffect(() => {
+    if (profile.userId) {
+      fetchCart();
+    }
+  }, [profile.userId]);
 
-    const handleGoToCheckout = () => {
+  const handleGoToCheckout = () => {
     setShowCheckout(true);
   };
 
@@ -37,8 +40,6 @@ const Cart = () => {
       key={item.id}
       style={styles.cartItem}
       onPress={() => {
-        console.log("Cart item:", item);
-        console.log("Navigating to ProductInfo with:", item);
         router.push({
           pathname: "/productInfo",
           params: {
@@ -46,9 +47,7 @@ const Cart = () => {
             name: item.name,
             image: item.image,
             price: item.price.toString(),
-            description: item.description
-              ? item.description
-              : "No description available",
+            description: item.description || "No description available",
           },
         });
       }}
@@ -67,7 +66,7 @@ const Cart = () => {
             keyboardType="numeric"
             value={item.quantity.toString()}
             onChangeText={(text) =>
-                updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
+              updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
             }
           />
           <Text style={styles.itemTotalPrice}>
@@ -82,7 +81,6 @@ const Cart = () => {
     <View style={styles.container}>
       {!showCheckout ? (
         <>
-          {/* Header */}
           <View style={styles.headerSection}>
             <TouchableOpacity
               style={styles.backButton}
@@ -101,7 +99,6 @@ const Cart = () => {
             </Text>
           </View>
 
-          {/* Cart Items */}
           <FlatList
             data={cart}
             renderItem={renderItem}
@@ -109,7 +106,6 @@ const Cart = () => {
             style={styles.cartItemsSection}
           />
 
-          {/* Footer Section */}
           <View style={styles.footerSection}>
             <Text style={styles.totalText}>
               Tổng cộng: {calculateTotal().toLocaleString()} đ
@@ -123,7 +119,7 @@ const Cart = () => {
           </View>
         </>
       ) : (
-        <Checkout onBack={handleBackToCart} /> // Render Checkout if showCheckout is true
+        <Checkout onBack={handleBackToCart} />
       )}
     </View>
   );
