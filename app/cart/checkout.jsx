@@ -75,14 +75,14 @@ export default function Checkout({ onBack }) {
       console.log("Sending shipping data:", JSON.stringify(shippingData, null, 2)); // Log dữ liệu gửi lên server
       const addShippingResponse =  await paymentService.addShipping(shippingData);
        if(!addShippingResponse || !addShippingResponse.success){
-          throw new Error(`Lỗi khi thêm shipping: ${addShippingResponse.message}`);
+          throw new Error(`Lỗi khi thêm shipping`);
        }
   
       // Xử lý thanh toán
       if (paymentMethod === 'COD') {
         const codPaymentResponse = await paymentService.createCodPayment(orderId);
          if(!codPaymentResponse || !codPaymentResponse.success){
-          throw new Error(`Lỗi khi tạo thanh toán COD: ${codPaymentResponse.message}`);
+          throw new Error(`Lỗi khi tạo thanh toán COD`);
        }
         alert('Thanh toán COD thành công!');
       } else if (paymentMethod === 'VNPay') {
@@ -94,7 +94,7 @@ export default function Checkout({ onBack }) {
       onBack(); // Quay lại trang trước
     } catch (error) {
       console.error('Lỗi trong quá trình thanh toán:', error);
-      alert('Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.');
+      alert(`Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại. Error: ${error.message}`);
     } finally {
       setIsProcessing(false); // Reset loading state
     }

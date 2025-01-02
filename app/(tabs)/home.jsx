@@ -1,30 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
-    Text,
     TextInput,
     Image,
     FlatList,
     StyleSheet,
     Dimensions,
 } from 'react-native';
-import ProductList from '../product/productList'; // Ensure correct path
+import ProductList from '../product/productList'; // Đảm bảo đường dẫn đúng
+import logo from '../../assets/images/logo.jpg'; // Import logo trực tiếp
 
 const { width } = Dimensions.get('window');
-const ITEM_WIDTH = width * 0.95;
-const ITEM_HEIGHT = ITEM_WIDTH * 0.5;
+const ITEM_WIDTH = Math.round(width * 0.95); // Làm tròn để đảm bảo đồng nhất
+const ITEM_HEIGHT = Math.round(ITEM_WIDTH * 0.5);
 
 const banners = [
-    { id: '1', image: 'https://via.placeholder.com/300x150' },
-    { id: '2', image: 'https://via.placeholder.com/300x150' },
-    { id: '3', image: 'https://via.placeholder.com/300x150' },
+    { id: '1', image: require('../../assets/images/bannerr.jpg') },
+    { id: '2', image: require('../../assets/images/single-banner.jpg') },
+    { id: '3', image: require('../../assets/images/newsletter.jpg') },
 ];
 
 const Home = () => {
     const [bannerIndex, setBannerIndex] = useState(0);
     const bannerListRef = useRef(null);
     const [searchText, setSearchText] = useState('');
-    const [searchResults, setSearchResults] = useState([]); // For future implementation
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -34,7 +33,7 @@ const Home = () => {
     }, []);
 
     useEffect(() => {
-        if (bannerListRef.current) {
+        if (bannerListRef.current && banners[bannerIndex]) {
             bannerListRef.current.scrollToIndex({
                 index: bannerIndex,
                 animated: true,
@@ -44,11 +43,11 @@ const Home = () => {
 
     const handleSearch = (text) => {
         setSearchText(text);
-        // Implement product filtering logic if needed
+        // Thêm logic lọc sản phẩm tại đây nếu cần
     };
 
     const renderBanner = ({ item }) => (
-        <Image source={{ uri: item.image }} style={styles.banner} />
+        <Image source={item.image} style={styles.banner} />
     );
 
     return (
@@ -57,10 +56,7 @@ const Home = () => {
                 <>
                     {/* Header */}
                     <View style={styles.header}>
-                        <Image
-                            source={require('./../../assets/images/logo.jpg')}
-                            style={styles.logo}
-                        />
+                        <Image source={logo} style={styles.logo} />
                         <TextInput
                             placeholder="Search products..."
                             style={styles.searchInput}
@@ -94,7 +90,7 @@ const Home = () => {
                     />
                 </>
             }
-            data={Array(1)} // Placeholder to add product list
+            data={Array(1)} // Dữ liệu placeholder để hiển thị danh sách sản phẩm
             renderItem={() => <ProductList searchText={searchText} />}
             keyExtractor={(_, index) => index.toString()}
             contentContainerStyle={styles.container}
@@ -139,13 +135,14 @@ const styles = StyleSheet.create({
     bannerList: {
         marginVertical: 20,
         alignItems: 'center',
+        justifyContent: 'center', // Đảm bảo căn giữa banner
     },
     banner: {
         width: ITEM_WIDTH,
         height: ITEM_HEIGHT,
         borderRadius: 12,
-        marginHorizontal: 10,
-        backgroundColor: '#f0f0f0',
+        marginHorizontal: 12,
+        resizeMode: 'cover', // Hiển thị đầy đủ hình ảnh
     },
 });
 

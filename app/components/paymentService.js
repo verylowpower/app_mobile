@@ -43,7 +43,7 @@ const paymentService = {
 
             const orderId = parseInt(response, 10);
             if (isNaN(orderId)) {
-                throw new Error("Phản hồi từ API không hợp lệ");
+                throw new Error("Invalid order ID response from API");
             }
             return orderId;
         } catch (error) {
@@ -54,18 +54,11 @@ const paymentService = {
 
     addShipping: async (shippingData) => {
         try {
-          // Gọi _fetch với expectJson = false để nhận text response
-          const response = await paymentService._fetch(`${API_BASE_URL_SHIPPING}/shippings/add`, {
+           await paymentService._fetch(`${API_BASE_URL_SHIPPING}/shippings/add`, {
             method: 'POST',
             body: JSON.stringify(shippingData),
           }, false);
-            
-            // Kiểm tra phản hồi có chứa "Order items added successfully!" hay không
-            if (response.includes("Order items added successfully!")) {
-                return { success: true, message: response }; // Trả về thành công
-            } else{
-               throw new Error(`Lỗi từ server: ${response}`);
-            }
+          return { success: true };
         } catch (error) {
             console.error("Error adding shipping:", error);
             throw error;
@@ -76,23 +69,15 @@ const paymentService = {
         try {
             // Tạo PaymentRequest object
             const paymentRequest = {
-              orderId: orderId?.toString(), // Sử dụng orderId từ param và chuyển về string. Kiểm tra null
-              isPayed: false,    // Mặc định là chưa thanh toán
-                // Các thuộc tính khác nếu cần thiết
+              orderId: orderId?.toString(),
+              isPayed: false,
             };
             
-             // Gọi _fetch với expectJson = false để nhận text response
-            const response =  await paymentService._fetch(`${API_BASE_URL_PAYMENT}/payments/createCod`, {
+              await paymentService._fetch(`${API_BASE_URL_PAYMENT}/payments/createCod`, {
                 method: 'POST',
                 body: JSON.stringify(paymentRequest),
             }, false);
-            
-          // Kiểm tra phản hồi có chứa "Payment created successfully" hay không
-             if (response.includes("Payment created successfully")) {
-                return { success: true, message: response }; // Trả về thành công
-            } else{
-                throw new Error(`Lỗi từ server: ${response}`);
-            }
+            return { success: true };
         } catch (error) {
             console.error("Error creating COD payment:", error);
             throw error;
