@@ -7,17 +7,17 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  ListRenderItem, // Import ListRenderItem
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useCart, CartItem } from "../cart/cartContext";
-import { ListRenderItem } from "react-native";
+import { useCart, CartItem } from "../cart/cartContext"; // Import CartItem từ cartContext
 import { useRouter } from "expo-router";
 import Checkout from "../cart/checkout";
-import { useProfile } from "../context/ProfileContext"; // Import useProfile
+import { useProfile } from "../context/ProfileContext";
 
 const Cart = () => {
-  const { cart, updateQuantity, calculateTotal, fetchCart } = useCart();
-  const { profile } = useProfile(); // Use profile context
+  const { cart, updateQuantity, calculateTotal, fetchCart, removeFromCart } = useCart();
+  const { profile } = useProfile();
   const router = useRouter();
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -36,22 +36,7 @@ const Cart = () => {
   };
 
   const renderItem: ListRenderItem<CartItem> = ({ item }) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.cartItem}
-      onPress={() => {
-        router.push({
-          pathname: "/productInfo",
-          params: {
-            id: item.id,
-            name: item.name,
-            image: item.image,
-            price: item.price.toString(),
-            description: item.description || "No description available",
-          },
-        });
-      }}
-    >
+    <View key={item.id} style={styles.cartItem}>
       {item.image && (
         <Image source={{ uri: item.image }} style={styles.itemImage} />
       )}
@@ -72,9 +57,12 @@ const Cart = () => {
           <Text style={styles.itemTotalPrice}>
             {(item.price * item.quantity).toLocaleString()} đ
           </Text>
+          <TouchableOpacity onPress={() => removeFromCart(item.id)}>
+            <Ionicons name="trash" size={24} color="red" style={styles.deleteIcon} />
+          </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -208,6 +196,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#333",
+  },
+  deleteIcon: {
+    marginLeft: 10, // Thêm style deleteIcon
   },
   footerSection: {
     flexDirection: "row",

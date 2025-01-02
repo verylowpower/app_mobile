@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import orderService from '../components/orderService';
 import { useProfile } from '../context/ProfileContext';
 
-interface CartItem {
+export interface CartItem {
     id: string;
     name: string;
     image: string;
@@ -23,7 +23,7 @@ interface CartContextProps {
     calculateTotal: () => number;
     // Favorites-related properties
     favorites: string[];
-    favoritesLoading: boolean; // Trạng thái loading cho favorites
+    favoritesLoading: boolean;
     addToFavorites: (item: CartItem) => void;
     removeFromFavorites: (itemId: string) => void;
     isFavorite: (itemId: string) => boolean;
@@ -35,12 +35,12 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     const [cart, setCart] = useState<CartItem[]>([]);
     const [cartId, setCartId] = useState<number | null>(null);
     const [favorites, setFavorites] = useState<string[]>([]);
-    const [favoritesLoading, setFavoritesLoading] = useState<boolean>(true); // Thêm trạng thái loading
+    const [favoritesLoading, setFavoritesLoading] = useState<boolean>(true);
     const { profile } = useProfile();
 
     // Load favorites from AsyncStorage on mount
     const loadFavorites = async () => {
-        setFavoritesLoading(true); // Bắt đầu loading
+        setFavoritesLoading(true);
         try {
             const favoritesString = await AsyncStorage.getItem('favorites');
             if (favoritesString) {
@@ -49,7 +49,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         } catch (error) {
             console.error('Error loading favorites:', error);
         } finally {
-            setFavoritesLoading(false); // Kết thúc loading
+            setFavoritesLoading(false);
         }
     };
 
@@ -69,6 +69,29 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     useEffect(() => {
         saveFavorites();
     }, [favorites]);
+
+    // Hàm thêm sản phẩm vào danh sách yêu thích
+    const addToFavorites = (item: CartItem) => {
+        if (!favorites.includes(item.id)) {
+            setFavorites([...favorites, item.id]);
+        }
+    };
+
+    // Hàm xóa sản phẩm khỏi danh sách yêu thích
+    const removeFromFavorites = (itemId: string) => {
+        setFavorites(favorites.filter((id) => id !== itemId));
+    };
+
+    // Hàm kiểm tra sản phẩm có trong danh sách yêu thích không
+    const isFavorite = (itemId: string): boolean => {
+        return favorites.includes(itemId);
+    };
+
+    // Hàm xóa tất cả mặt hàng trong giỏ hàng
+    const clearCart = useCallback(() => {
+        setCart([]);
+        setCartId(null);
+    }, []);
 
     const fetchCart = useCallback(async () => {
         if (profile.userId) {
@@ -94,11 +117,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             setCartId(null);
         }
     }, [profile.userId]);
-
-    const clearCart = useCallback(() => {
-        setCart([]);
-        setCartId(null);
-    }, []);
 
     const addToCart = async (item: CartItem) => {
         if (profile.userId) {
@@ -138,20 +156,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         return cart.reduce((total, item) => total + item.price * item.quantity, 0);
     }, [cart]);
 
-    const addToFavorites = (item: CartItem) => {
-        if (!favorites.includes(item.id)) {
-            setFavorites([...favorites, item.id]);
-        }
-    };
-
-    const removeFromFavorites = (itemId: string) => {
-        setFavorites(favorites.filter(id => id !== itemId));
-    };
-
-    const isFavorite = (itemId: string): boolean => {
-        return favorites.includes(itemId);
-    };
-
     return (
         <CartContext.Provider
             value={{
@@ -165,7 +169,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                 calculateTotal,
                 // Favorites-related properties
                 favorites,
-                favoritesLoading, // Thêm vào context
+                favoritesLoading,
                 addToFavorites,
                 removeFromFavorites,
                 isFavorite,
@@ -184,4 +188,4 @@ const useCart = () => {
     return context;
 };
 
-export { CartProvider, useCart, CartItem };
+export { CartProvider, useCart };
