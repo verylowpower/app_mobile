@@ -11,13 +11,6 @@ export default function UserSetting() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push('/setting/purchaseHistory')}
-      >
-        <Text style={styles.buttonText}>Lịch sử mua hàng</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
         onPress={() => router.push('/setting/changePassword')}
       >
         <Text style={styles.buttonText}>Đổi Mật Khẩu</Text>

@@ -9,7 +9,6 @@ export default function Layout() {
     >
       {/* Các màn hình được định nghĩa ở đây */}
       <Stack.Screen name="userSetting" />
-      <Stack.Screen name="purchaseHistory" />
       <Stack.Screen name="changePassword" />
       <Stack.Screen name="editPersonalInfo" />
     </Stack>
