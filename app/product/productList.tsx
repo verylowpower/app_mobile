@@ -154,6 +154,7 @@ const ProductList = ({ searchText }: { searchText: string }) => {
                 description: product.description,
                 imageUrl: product.images[0]?.url,
                 categoryName: product.categoryName,
+                discount: String(product.discount),
             },
         });
     };

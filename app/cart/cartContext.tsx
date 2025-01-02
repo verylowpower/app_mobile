@@ -10,6 +10,7 @@ export interface CartItem {
     price: number;
     quantity: number;
     description?: string;
+    discount: number;
 }
 
 interface CartContextProps {
@@ -17,7 +18,7 @@ interface CartContextProps {
     cartId: number | null;
     fetchCart: () => Promise<void>;
     clearCart: () => void;
-    addToCart: (item: CartItem) => void;
+    addToCart: (item: CartItem, discount: number) => void;
     removeFromCart: (itemId: string) => void;
     updateQuantity: (itemId: string, quantity: number) => void;
     calculateTotal: () => number;
@@ -98,14 +99,18 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             try {
                 const cartData = await orderService.getCartItems(profile.userId.toString());
                 if (cartData && cartData.cartItems) {
-                    const formattedCart = cartData.cartItems.map((item: any) => ({
-                        id: item.productId.toString(),
-                        name: item.productName,
-                        image: item.imageUrl ? item.imageUrl.replace('localhost', '192.168.2.4') : null,
-                        price: item.price,
-                        quantity: item.quantity,
-                        description: item.description,
-                    }));
+                    const formattedCart = cartData.cartItems.map((item: any) => {
+                        const discountedPrice = item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price;
+                        return {
+                            id: item.productId.toString(),
+                            name: item.productName,
+                            image: item.imageUrl ? item.imageUrl.replace('localhost', '192.168.2.4') : null,
+                            price: discountedPrice,
+                            quantity: item.quantity,
+                            description: item.description,
+                            discount: item.discount,
+                        }
+                    });
                     setCart(formattedCart);
                     setCartId(cartData.cartId);
                 }
@@ -118,10 +123,10 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         }
     }, [profile.userId]);
 
-    const addToCart = async (item: CartItem) => {
+    const addToCart = async (item: CartItem, discount: number) => {
         if (profile.userId) {
             try {
-                const newItem = { productId: parseInt(item.id), quantity: 1, price: item.price };
+                const newItem = { productId: parseInt(item.id), quantity: 1, price: item.price * (1- discount/100) };
                 await orderService.addItemToCart(profile.userId.toString(), newItem);
                 await fetchCart();
             } catch (error) {
@@ -151,6 +156,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             }
         }
     };
+
 
     const calculateTotal = useCallback(() => {
         return cart.reduce((total, item) => total + item.price * item.quantity, 0);

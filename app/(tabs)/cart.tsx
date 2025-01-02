@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
-  ListRenderItem, // Import ListRenderItem
+  ListRenderItem,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useCart, CartItem } from "../cart/cartContext"; // Import CartItem từ cartContext
+import { useCart, CartItem } from "../cart/cartContext";
 import { useRouter } from "expo-router";
 import Checkout from "../cart/checkout";
 import { useProfile } from "../context/ProfileContext";
@@ -35,35 +35,36 @@ const Cart = () => {
     setShowCheckout(false);
   };
 
-  const renderItem: ListRenderItem<CartItem> = ({ item }) => (
-    <View key={item.id} style={styles.cartItem}>
-      {item.image && (
-        <Image source={{ uri: item.image }} style={styles.itemImage} />
-      )}
-      <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemPrice}>
-          Đơn giá: {item.price.toLocaleString()} đ
-        </Text>
-        <View style={styles.quantitySection}>
-          <TextInput
-            style={styles.quantityInput}
-            keyboardType="numeric"
-            value={item.quantity.toString()}
-            onChangeText={(text) =>
-              updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
-            }
-          />
-          <Text style={styles.itemTotalPrice}>
-            {(item.price * item.quantity).toLocaleString()} đ
-          </Text>
-          <TouchableOpacity onPress={() => removeFromCart(item.id)}>
-            <Ionicons name="trash" size={24} color="red" style={styles.deleteIcon} />
-          </TouchableOpacity>
+    const renderItem: ListRenderItem<CartItem> = ({ item }) => (
+        <View key={item.id} style={styles.cartItem}>
+            {item.image && (
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+            )}
+            <View style={styles.itemDetails}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemPrice}>
+                    Đơn giá: {item.price.toLocaleString()} đ
+                </Text>
+                <View style={styles.quantitySection}>
+                    <TextInput
+                        style={styles.quantityInput}
+                        keyboardType="numeric"
+                        value={item.quantity.toString()}
+                        onChangeText={(text) =>
+                            updateQuantity(item.id, Math.max(1, parseInt(text) || 1))
+                        }
+                    />
+                    <Text style={styles.itemTotalPrice}>
+                        {(item.price * item.quantity).toLocaleString()} đ
+                    </Text>
+                    <TouchableOpacity onPress={() => removeFromCart(item.id)}>
+                        <Ionicons name="trash" size={24} color="red" style={styles.deleteIcon} />
+                    </TouchableOpacity>
+                </View>
+            </View>
         </View>
-      </View>
-    </View>
-  );
+    );
+
 
   return (
     <View style={styles.container}>
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   deleteIcon: {
-    marginLeft: 10, // Thêm style deleteIcon
+    marginLeft: 10,
   },
   footerSection: {
     flexDirection: "row",
